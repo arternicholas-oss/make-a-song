@@ -273,9 +273,64 @@ export default function SongPageClient({ song }: { song: SongRow }) {
               🎵 Make One for Someone
             </a>
           </div>
-          <p style={{ fontSize: 12, color: '#9A8F88' }}>
+          <p style={{ fontSize: 12, color: '#9A8F88', marginBottom: 24 }}>
             This link is shareable. Send it directly to {song.recipient_name}.
           </p>
+
+          {/* ─── SHARE BUTTONS ──────────────────────────────────────────── */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              className="act"
+              onClick={() => {
+                const url = window.location.href
+                const text = `Check out this song I had written for ${song.recipient_name}!`
+                if (navigator.share) {
+                  navigator.share({ title: song.title, text, url }).catch(() => {})
+                } else {
+                  navigator.clipboard.writeText(url).then(() => alert('Link copied!'))
+                }
+              }}
+              style={{
+                background: '#fff', color: '#1a1410',
+                border: '2px solid #EDE8E0',
+                padding: '10px 18px', borderRadius: 99, fontSize: 13,
+                fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+              }}
+            >
+              🔗 Share Link
+            </button>
+            <a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I had a personalized song written for ${song.recipient_name} and it's amazing 🎵`)}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="act"
+              style={{
+                display: 'inline-block', textDecoration: 'none',
+                background: '#fff', color: '#1a1410',
+                border: '2px solid #EDE8E0',
+                padding: '10px 18px', borderRadius: 99, fontSize: 13,
+                fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+              }}
+            >
+              &#x1D54F; Post on X
+            </a>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Check out this song I had written for ${song.recipient_name}! ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="act"
+              style={{
+                display: 'inline-block', textDecoration: 'none',
+                background: '#fff', color: '#1a1410',
+                border: '2px solid #EDE8E0',
+                padding: '10px 18px', borderRadius: 99, fontSize: 13,
+                fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+              }}
+            >
+              💬 WhatsApp
+            </a>
+          </div>
+
         </div>
 
       </div>
