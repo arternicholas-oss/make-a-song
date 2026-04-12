@@ -51,7 +51,11 @@ export async function POST(req: NextRequest) {
     const stripeSession = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [{
-        price: process.env.STRIPE_PRICE_ID || '',
+        price_data: {
+          currency: 'usd',
+          product: process.env.STRIPE_PRODUCT_ID || '',
+          unit_amount: 1499, // $14.99
+        },
         quantity: 1,
       }],
       customer_email: email || undefined,
