@@ -363,6 +363,89 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
           ))}
         </div>
       </div>
+
+      {/* âââ HOW IT WORKS âââââââââââââââââââââââââââââââââââââââââââââââââââ */}
+      <div style={{ width: '100%', maxWidth: 720, margin: '0 auto', padding: '80px 20px 0' }}>
+        <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(28px,5vw,40px)', fontWeight: 700, textAlign: 'center', marginBottom: 48, color: G.ink }}>
+          How It Works
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 24 }}>
+          {[
+            { num: '1', icon: 'ð¯', title: 'Pick the vibe', desc: 'Choose an occasion, genre, and tone that fits. Birthday roast? Anniversary ballad? Brand anthem? We got you.' },
+            { num: '2', icon: 'ð¬', title: 'Tell us about them', desc: 'Answer a few quick questions â their name, what makes them special, a favorite memory. The more detail, the better the song.' },
+            { num: '3', icon: 'â¨', title: 'Get your song', desc: 'AI writes original lyrics (and optional audio) personalized to every detail you shared. Ready in under 60 seconds.' },
+          ].map((s) => (
+            <div key={s.num} style={{ textAlign: 'center', padding: '24px 16px' }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: `linear-gradient(135deg,${G.coral}20,${G.peach}20)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 28 }}>{s.icon}</div>
+              <div style={{ fontFamily: "'Fraunces',serif", fontSize: 18, fontWeight: 700, marginBottom: 8, color: G.ink }}>{s.title}</div>
+              <div style={{ fontSize: 14, color: G.muted, lineHeight: 1.6 }}>{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* âââ PRICING ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */}
+      <div style={{ width: '100%', maxWidth: 480, margin: '0 auto', padding: '80px 20px 0', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(28px,5vw,40px)', fontWeight: 700, marginBottom: 16, color: G.ink }}>
+          Simple Pricing
+        </h2>
+        <p style={{ fontSize: 15, color: G.muted, marginBottom: 32, lineHeight: 1.6 }}>One song, one price. No subscriptions, no hidden fees.</p>
+        <div style={{ background: G.white, border: `2px solid ${G.border}`, borderRadius: 24, padding: '36px 28px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: `linear-gradient(90deg,${G.coral},${G.peach})` }} />
+          <div style={{ fontSize: 48, fontFamily: "'Fraunces',serif", fontWeight: 900, color: G.ink, marginBottom: 8 }}>{PRICE_DISPLAY}</div>
+          <div style={{ fontSize: 14, color: G.muted, marginBottom: 24 }}>per song Â· one-time payment</div>
+          <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              'Original lyrics written by AI, personalized to your answers',
+              'Choose from 6 genres and 4 tones',
+              'Shareable song page with a unique link',
+              'Delivered via email so you never lose it',
+              'Works for personal gifts or brand anthems',
+              'Secure checkout via Stripe (Apple Pay + Google Pay)',
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: G.ink, lineHeight: 1.5 }}>
+                <span style={{ color: G.mint, fontSize: 16, flexShrink: 0, marginTop: 1 }}>&#10003;</span>
+                {item}
+              </div>
+            ))}
+          </div>
+          <button className="pill" onClick={onStart} style={{ marginTop: 28, width: '100%', background: `linear-gradient(135deg,${G.coral},${G.peach})`, color: '#fff', border: 'none', padding: '16px', borderRadius: 99, fontSize: 16, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 6px 24px rgba(255,107,107,0.35)' }}>
+            Make a Song â¦
+          </button>
+        </div>
+      </div>
+
+      {/* âââ FAQ âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */}
+      <div style={{ width: '100%', maxWidth: 600, margin: '0 auto', padding: '80px 20px 0' }}>
+        <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(28px,5vw,40px)', fontWeight: 700, textAlign: 'center', marginBottom: 40, color: G.ink }}>
+          Questions?
+        </h2>
+        {[
+          { q: 'How long does it take?', a: 'Under 60 seconds once you submit. You answer a few fun questions (about 3 minutes), pay, and your song is generated instantly.' },
+          { q: 'Can I hear the song or is it just lyrics?', a: 'You get original written lyrics, plus optional AI-generated audio you can play and share.' },
+          { q: 'What if I don\'t like the song?', a: 'Every song is uniquely generated from your answers. The more detail you give, the better the result. We also offer one free regeneration per song.' },
+          { q: 'Is this a subscription?', a: `No. It's a one-time payment of ${PRICE_DISPLAY}. No recurring charges, no account needed.` },
+          { q: 'Can I use this for a business or brand?', a: 'Absolutely. We have a dedicated Brand Mode with custom questions for businesses, podcasts, startups, and more.' },
+          { q: 'How do I share the song?', a: 'Every song gets its own unique link you can text, email, or post on social media. We also provide TikTok-ready captions.' },
+        ].map((faq, i) => (
+          <details key={i} style={{ background: G.white, border: `2px solid ${G.border}`, borderRadius: 16, padding: '18px 20px', marginBottom: 10, cursor: 'pointer' }}>
+            <summary style={{ fontWeight: 700, fontSize: 15, color: G.ink, listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {faq.q}
+              <span style={{ color: G.muted, fontSize: 18, flexShrink: 0, marginLeft: 12 }}>+</span>
+            </summary>
+            <p style={{ fontSize: 14, color: G.muted, lineHeight: 1.65, marginTop: 12 }}>{faq.a}</p>
+          </details>
+        ))}
+      </div>
+
+      {/* âââ FOOTER ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */}
+      <footer style={{ width: '100%', textAlign: 'center', padding: '80px 20px 40px', fontSize: 13, color: G.muted }}>
+        <div style={{ marginBottom: 12 }}>
+          <a href="/privacy" style={{ color: G.muted, textDecoration: 'underline', marginRight: 20 }}>Privacy Policy</a>
+          <a href="/terms" style={{ color: G.muted, textDecoration: 'underline' }}>Terms of Service</a>
+        </div>
+        <div>&copy; {new Date().getFullYear()} Make a Song About You. All rights reserved.</div>
+      </footer>
     </div>
   )
 }
