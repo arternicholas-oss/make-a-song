@@ -150,7 +150,13 @@ export default function App() {
           brandTone: isBrand ? answers.brand_tone : undefined,
         }),
       })
-      const data = await res.json()
+      const text = await res.text()
+      let data
+      try {
+        data = JSON.parse(text)
+      } catch (parseErr) {
+        throw new Error('Server returned an invalid response. Please try again.')
+      }
       if (data.success && data.song) {
         setSong({
           title: data.song.title,
@@ -318,7 +324,7 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
           Make a Song<br /><span style={{ fontStyle: 'italic', color: G.coral }}>About You</span>
         </h1>
         <p style={{ fontSize: 18, color: G.muted, lineHeight: 1.65, maxWidth: 440, margin: '0 auto 44px', fontWeight: 400 }}>
-          Answer a few questions. We&apos;ll write a song that could only ever be about them — or your brand.
+          A one-of-a-kind song about someone you love — written in minutes, remembered forever.
         </p>
 
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 20 }}>
@@ -345,7 +351,7 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, textAlign: 'left' }}>
           {[
-            { title: '"The Man Who Remembers Everything"', excerpt: '"Marcus, you remember every little thing I said / Six months later, there it is, sitting on the bed…"', tag: 'Anniversary · 70s Love Song' },
+            { title: '"The Man Who Remembers Everything"', excerpt: '"Marcus, you remember every little thing I said / Six months later, there it is, sitting on the bed…"', tag: 'Anniversary · 70s Soul' },
             { title: '"Built Different (Vera\'s Bakery)"', excerpt: '"Flour on the counter, love in the dough / Vera\'s Bakery, everyone knows / Where every morning starts with something real…"', tag: 'Brand Anthem · Country' },
           ].map((s, i) => (
             <div key={i} style={{ background: G.white, border: `2px solid ${G.border}`, borderRadius: 18, padding: '20px 18px' }}>

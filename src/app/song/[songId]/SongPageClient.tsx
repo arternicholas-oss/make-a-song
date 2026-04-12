@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { GENRE_LABELS, GENRE_COLORS } from '@/lib/constants'
 import type { SongRow } from '@/lib/types'
 
@@ -17,10 +17,21 @@ export default function SongPageClient({ song }: { song: SongRow }) {
   const [revealed, setRevealed] = useState(false)
   const [copied, setCopied] = useState(false)
   const [capCopied, setCapCopied] = useState(false)
+  const [playing, setPlaying] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   useEffect(() => {
     setTimeout(() => setRevealed(true), 100)
   }, [])
+
+  // Auto-play song when page loads (user must tap play on mobile due to browser policy)
+  useEffect(() => {
+    if (song.audio_url && audioRef.current) {
+      audioRef.current.play().then(() => setPlaying(true)).catch(() => {
+        // Autoplay blocked by browser — user needs to tap play
+      })
+    }
+  }, [song.audio_url])
 
   const gc = GENRE_COLORS[song.genre] || GENRE_COLORS['70s_love_song']
   const gradColors = song.is_brand ? ['#1B2A4A', '#2A3F6F'] : gc.grad
@@ -112,9 +123,25 @@ export default function SongPageClient({ song }: { song: SongRow }) {
             {/* Audio player - show when audio is available */}
             {song.audio_url && (
               <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 14 }}>🎶 Play Your Song</div>
+                {!playing && (
+                  <button
+                    onClick={() => { audioRef.current?.play(); setPlaying(true) }}
+                    style={{
+                      background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)',
+                      borderRadius: 99, padding: '14px 32px', color: '#fff', fontSize: 16,
+                      fontWeight: 700, cursor: 'pointer', marginBottom: 14, transition: 'all 0.2s',
+                      backdropFilter: 'blur(10px)',
+                    }}
+                  >
+                    ▶ Play Song
+                  </button>
+                )}
                 <audio
+                  ref={audioRef}
                   controls
+                  preload="auto"
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
                   style={{
                     width: '100%',
                     height: 40,
@@ -122,7 +149,7 @@ export default function SongPageClient({ song }: { song: SongRow }) {
                     backgroundColor: 'rgba(255,255,255,0.15)',
                     outline: 'none',
                   }}
-                  src={song.audio_url}
+                  src={`/api/audio/${song.song_id}`}
                 />
               </div>
             )}
@@ -202,6 +229,22 @@ export default function SongPageClient({ song }: { song: SongRow }) {
           style={{ animationDelay: `${0.15 + song.sections.length * 0.12}s` }}
         >
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            {song.audio_url && (
+              <a
+                href={`/api/audio/${song.song_id}?dl=1`}
+                download={`${song.title || 'my-song'}.mp3`}
+                className="act"
+                style={{
+                  display: 'inline-block',
+                  background: '#fff', color: '#1a1410',
+                  border: '2px solid #EDE8E0', textDecoration: 'none',
+                  padding: '12px 22px', borderRadius: 99, fontSize: 14,
+                  fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                }}
+              >
+                ⬇ Download MP3
+              </a>
+            )}
             <button
               className="act"
               onClick={copyLyrics}

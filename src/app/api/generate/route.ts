@@ -7,8 +7,8 @@ import { GENRE_LABELS } from '@/lib/prompts'
 import { generateMusic } from '@/lib/lyria'
 import type { Answers } from '@/lib/types'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-const resend = new Resend(process.env.RESEND_API_KEY!)
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' })
+const resend = new Resend(process.env.RESEND_API_KEY || '')
 
 export async function POST(req: NextRequest) {
   try {

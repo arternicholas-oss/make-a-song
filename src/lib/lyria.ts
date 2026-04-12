@@ -20,21 +20,23 @@ export async function generateMusic(
 
   const prompt = `Generate a full song in the style of ${genre} with a ${tone} mood. The song is titled "${title}". Here are the lyrics:\n\n${lyrics}`
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/lyria-3-pro-preview:generateContent?key=${apiKey}`
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/lyria-3-pro-preview:generateContent`
 
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
       body: JSON.stringify({
         contents: [
           {
-            role: 'user',
             parts: [{ text: prompt }],
           },
         ],
         generationConfig: {
-          responseModalities: ['AUDIO'],
+          responseModalities: ['AUDIO', 'TEXT'],
         },
       }),
     })
@@ -47,8 +49,12 @@ export async function generateMusic(
 
     const data = await response.json()
     console.log('[LYRIA] Response received, candidates:', data.candidates?.length || 0)
+    if (data.promptFeedback) {
+      console.log('[LYRIA] Prompt feedback:', JSON.stringify(data.promptFeedback))
+    }
 
     if (!data.candidates || data.candidates.length === 0) {
+      console.error('[LYRIA] Full response (no candidates):', JSON.stringify(data).slice(0, 1000))
       throw new Error('No response candidates returned from Lyria API')
     }
 

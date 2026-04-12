@@ -10,7 +10,7 @@ import type { Answers } from '@/lib/types'
  * Remove or protect this route before deploying to production.
  */
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' })
 
 export async function POST(req: NextRequest) {
   try {
@@ -103,7 +103,10 @@ export async function POST(req: NextRequest) {
       )
 
       const audioBuffer = Buffer.from(musicResponse.audioBase64, 'base64')
-      const audioPath = `${songId}.mp3`
+      // Use correct extension based on mime type from Lyria
+      const ext = musicResponse.mimeType.includes('wav') ? 'wav' : musicResponse.mimeType.includes('mp3') || musicResponse.mimeType.includes('mpeg') ? 'mp3' : 'wav'
+      const audioPath = `${songId}.${ext}`
+      console.log(`[AUDIO] Uploading ${audioBuffer.byteLength} bytes as ${audioPath} (${musicResponse.mimeType})`)
       const { error: uploadError } = await supabaseAdmin.storage
         .from('songs-audio')
         .upload(audioPath, audioBuffer, {

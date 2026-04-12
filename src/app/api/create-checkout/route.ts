@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { Answers } from '@/lib/types'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
 })
 
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     const stripeSession = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [{
-        price: process.env.STRIPE_PRICE_ID!,
+        price: process.env.STRIPE_PRICE_ID || '',
         quantity: 1,
       }],
       customer_email: email || undefined,

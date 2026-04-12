@@ -9,8 +9,10 @@ export const OCCASIONS = [
   { id: 'fathers_day', label: "Father's Day",    emoji: '🎩' },
   { id: 'friendship',  label: 'Friendship',      emoji: '🤝' },
   { id: 'roast',       label: 'Roast',           emoji: '🎤' },
-  { id: 'just_because',label: 'Just Because',    emoji: '✨' },
-  { id: 'brand',       label: 'Brand / Business',emoji: '🏢', isBrand: true },
+  { id: 'memorial',    label: 'In Memory Of',     emoji: '🕊️' },
+  { id: 'pet',         label: 'For My Pet',       emoji: '🐾' },
+  { id: 'just_because',label: 'Just Because',     emoji: '✨' },
+  { id: 'brand',       label: 'Brand / Business', emoji: '🏢', isBrand: true },
 ] as const
 
 // ─── GENRES ───────────────────────────────────────────────────────────────────
@@ -18,7 +20,7 @@ export const OCCASIONS = [
 export const GENRES = [
   {
     id: '70s_love_song',
-    label: '70s Love Song',
+    label: '70s Soul',
     tagline: 'Warm. Unhurried. Timeless.',
     desc: 'Carol King, James Taylor vibes. Melodic and intimate, built to last.',
     sample: '"You light up the ordinary like it\'s sacred ground…"',
@@ -108,7 +110,7 @@ export const GENRE_COLORS: Record<string, { bg: string; accent: string; dot: str
 // ─── SURPRISE ME COMBOS ───────────────────────────────────────────────────────
 
 export const SURPRISES = [
-  { label: '70s Heartbreaker',    emoji: '💔', genre: '70s_love_song', tone: 'romantic'  },
+  { label: '70s Soul',              emoji: '💔', genre: '70s_love_song', tone: 'romantic'  },
   { label: 'Gospel Roast',        emoji: '🙌', genre: 'gospel',        tone: 'funny'     },
   { label: 'Hip-Hop Love Letter', emoji: '💌', genre: 'hip_hop',       tone: 'romantic'  },
   { label: 'Country Tearjerker',  emoji: '🤠', genre: 'country',       tone: 'heartfelt' },
@@ -134,7 +136,7 @@ export const TIKTOK_CAPTIONS: Record<string, (name: string) => string> = {
 // ─── GENRE LABELS ────────────────────────────────────────────────────────────
 
 export const GENRE_LABELS: Record<string, string> = {
-  '70s_love_song': '70s Love Song',
+  '70s_love_song': '70s Soul',
   '90s_rb':        '90s R&B',
   'country':       'Country',
   'hip_hop':       'Hip-Hop Tribute',
