@@ -74,7 +74,7 @@ type Step = 'landing' | 'occasion' | 'genre' | 'tone' | 'questions' | 'brand_que
 export default function App() {
   const [step, setStep]                       = useState<Step>('landing')
   const [answers, setAnswers]                 = useState<Record<string, string>>({})
-  const [song, setSong]                       = useState<{ title: string; sections: { label: string; lines: string[] }[]; audioUrl?: string } | null>(null)
+  const [song, setSong]                       = useState<{ title: string; sections: { label: string; lines: string[] }[]; audioUrl?: string; songId?: string } | null>(null)
   const [loadLine, setLoadLine]               = useState(0)
   const [regenCount, setRegenCount]           = useState(0)
   const [copied, setCopied]                   = useState(false)
@@ -162,6 +162,7 @@ export default function App() {
           title: data.song.title,
           sections: data.song.sections,
           audioUrl: data.song.audio_url,
+          songId: data.song.song_id || data.songId,
         })
         setStep('song')
       } else {
@@ -234,10 +235,10 @@ export default function App() {
           <SongScreen song={song} answers={answers} revealed={revealed} regenCount={regenCount} copied={copied}
             onRegen={async () => { if (regenCount < 1) { setRegenCount(c => c + 1) } }}
             onCopy={copyLyrics} onNew={restart} onTikTok={() => setTiktokMode(true)} onSend={() => setSendMode(true)}
-            isBrand={isBrand} audioUrl={song.audioUrl}
+            isBrand={isBrand} audioUrl={song.audioUrl} songId={song.songId}
           />
         )}
-        {step === 'song' && song && tiktokMode && <TikTokVideoMode song={song} answers={answers} onBack={() => setTiktokMode(false)} />}
+        {step === 'song' && song && tiktokMode && <TikTokVideoMode song={song} answers={answers} onBack={() => setTiktokMode(false)} songId={song.songId} audioUrl={song.audioUrl} />}
         {step === 'song' && song && sendMode && <SendSongModal song={song} answers={answers} onBack={() => setSendMode(false)} isBrand={isBrand} />}
       </div>
     </>
@@ -659,11 +660,11 @@ function LoadingScreen({ loadLine, isBrand }: { loadLine: number; isBrand: boole
 }
 
 // ─── SONG SCREEN ──────────────────────────────────────────────────────────────
-function SongScreen({ song, answers, revealed, regenCount, copied, onRegen, onCopy, onNew, onTikTok, onSend, isBrand, audioUrl }: {
+function SongScreen({ song, answers, revealed, regenCount, copied, onRegen, onCopy, onNew, onTikTok, onSend, isBrand, audioUrl, songId }: {
   song: { title: string; sections: { label: string; lines: string[] }[] }
   answers: Record<string, string>; revealed: boolean; regenCount: number; copied: boolean
   onRegen: () => void; onCopy: () => void; onNew: () => void; onTikTok: () => void; onSend: () => void
-  isBrand: boolean; audioUrl?: string
+  isBrand: boolean; audioUrl?: string; songId?: string
 }) {
   const isChorus = (l: string) => l?.toLowerCase().includes('chorus') || l?.toLowerCase().includes('outro')
   const gc = GENRE_COLORS[answers.genre] || GENRE_COLORS['70s_love_song']
@@ -715,7 +716,7 @@ function SongScreen({ song, answers, revealed, regenCount, copied, onRegen, onCo
                     backgroundColor: 'rgba(255,255,255,0.15)',
                     outline: 'none',
                   }}
-                  src={audioUrl}
+                  src={songId ? `/api/audio/${songId}` : audioUrl}
                 />
               </div>
             )}
@@ -796,13 +797,14 @@ function SongScreen({ song, answers, revealed, regenCount, copied, onRegen, onCo
 }
 
 // ─── TIKTOK VIDEO MODE ────────────────────────────────────────────────────────
-function TikTokVideoMode({ song, answers, onBack }: { song: { title: string; sections: { label: string; lines: string[] }[] }; answers: Record<string, string>; onBack: () => void }) {
+function TikTokVideoMode({ song, answers, onBack, songId, audioUrl }: { song: { title: string; sections: { label: string; lines: string[] }[] }; answers: Record<string, string>; onBack: () => void; songId?: string; audioUrl?: string }) {
   const allLines = song.sections.flatMap(s => s.lines.map(l => ({ line: l, isChorus: s.label.toLowerCase().includes('chorus') })))
   const [idx, setIdx] = useState(0)
   const [visible, setVisible] = useState(true)
   const [playing, setPlaying] = useState(false)
   const gc = GENRE_COLORS[answers.genre] || GENRE_COLORS['70s_love_song']
   const interval = useRef<NodeJS.Timeout | null>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   function advance() { setVisible(false); setTimeout(() => { setIdx(i => (i + 1) % allLines.length); setVisible(true) }, 300) }
   function prev() { setVisible(false); setTimeout(() => { setIdx(i => (i - 1 + allLines.length) % allLines.length); setVisible(true) }, 300) }
@@ -813,9 +815,18 @@ function TikTokVideoMode({ song, answers, onBack }: { song: { title: string; sec
     return () => { if (interval.current) clearInterval(interval.current) }
   }, [playing, allLines.length])
 
+  // Sync audio with play/pause state
+  const audioSrc = songId ? `/api/audio/${songId}` : audioUrl
+  useEffect(() => {
+    if (!audioRef.current || !audioSrc) return
+    if (playing) { audioRef.current.play().catch(() => {}) }
+    else { audioRef.current.pause() }
+  }, [playing, audioSrc])
+
   const current = allLines[idx] || { line: '', isChorus: false }
   return (
     <div style={{ minHeight: '100vh', background: G.ink, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', position: 'relative' }}>
+      {audioSrc && <audio ref={audioRef} src={audioSrc} preload="auto" />}
       <button onClick={onBack} style={{ position: 'absolute', top: 24, left: 24, background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', padding: '10px 18px', borderRadius: 99, fontSize: 13, fontWeight: 600, cursor: 'pointer', zIndex: 10 }}>← Back</button>
       <div style={{ width: 'min(360px,90vw)', aspectRatio: '9/16', background: `linear-gradient(160deg,${gc.grad[0]},${gc.grad[1]})`, borderRadius: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 28px', position: 'relative', overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}>
         <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }} />
