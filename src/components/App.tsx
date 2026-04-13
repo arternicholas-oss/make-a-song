@@ -737,12 +737,14 @@ function ReviewStep({ answers, onBack, onGenerate, onTestGenerate, isBrand, load
         {loading ? 'Starting checkout…' : `✦ ${isBrand ? 'Write My Theme Song' : 'Write My Song'} — ${PRICE_DISPLAY}`}
       </button>
       <p style={{ textAlign: 'center', fontSize: 13, color: G.muted, marginTop: 12 }}>Secure checkout via Stripe · Apple Pay &amp; Google Pay accepted</p>
-      <button onClick={onTestGenerate} disabled={loading} style={{
-        width: '100%', padding: '14px 0', borderRadius: 99, border: `2px dashed ${G.muted}`,
-        background: 'transparent', color: G.muted, fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 16,
-      }}>
-        {loading ? 'Generating…' : '🧪 Test Mode — Skip Payment'}
-      </button>
+      {process.env.NODE_ENV !== 'production' && (
+        <button onClick={onTestGenerate} disabled={loading} style={{
+          width: '100%', padding: '14px 0', borderRadius: 99, border: `2px dashed ${G.muted}`,
+          background: 'transparent', color: G.muted, fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 16,
+        }}>
+          {loading ? 'Generating…' : '🧪 Test Mode — Skip Payment'}
+        </button>
+      )}
     </Shell>
   )
 }

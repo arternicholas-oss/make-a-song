@@ -29,7 +29,9 @@ export default function CheckoutSuccessClient() {
     if (!sessionId) { setError('Missing session. Please check your email for your song link.'); return }
 
     let attempts = 0
-    const maxAttempts = 30
+    const maxAttempts = 45            // 90s total polling window
+    const retryAtAttempts = [15, 30]  // fire self-healing retries at 30s and 60s
+    let retriedAt = new Set<number>()
 
     const poll = async () => {
       try {
@@ -44,6 +46,19 @@ export default function CheckoutSuccessClient() {
       } catch (e) { /* ignore polling errors */ }
 
       attempts++
+
+      // Self-healing: if we've been polling a while with no song, fire the
+      // retry endpoint. It's safe to call multiple times — it short-circuits
+      // if a song already exists or if generation is in flight.
+      if (retryAtAttempts.includes(attempts) && !retriedAt.has(attempts)) {
+        retriedAt.add(attempts)
+        fetch('/api/retry-generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        }).catch(() => { /* non-critical */ })
+      }
+
       if (attempts >= maxAttempts) {
         setError('Your song is taking a little longer than expected. Check your email — we\'ll send it there too.')
         return

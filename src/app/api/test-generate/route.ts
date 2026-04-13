@@ -7,12 +7,20 @@ import type { Answers } from '@/lib/types'
 
 /**
  * TEST ENDPOINT — skips Stripe payment for local testing.
- * Remove or protect this route before deploying to production.
+ * Gated to non-production environments only. Returns 404 in production.
  */
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' })
 
+// Allow test endpoint only in development, or when ALLOW_TEST_GENERATE=true is
+// explicitly set (useful for preview deploys). In production this is a 404.
+const IS_TEST_GENERATE_ENABLED =
+  process.env.NODE_ENV !== 'production' || process.env.ALLOW_TEST_GENERATE === 'true'
+
 export async function POST(req: NextRequest) {
+  if (!IS_TEST_GENERATE_ENABLED) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
   try {
     const { answers, genre, tone, occasion, isBrand, email, brandTone } = await req.json()
 

@@ -33,6 +33,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order not paid' }, { status: 403 })
     }
 
+    // ─── Idempotency guard ─────────────────────────────────────────────────────
+    // If a song already exists for this order and this is NOT a regeneration,
+    // short-circuit so duplicate webhook deliveries / retry-generate calls don't
+    // produce duplicate songs (and don't burn Anthropic/Lyria credits twice).
+    if (!isRegen) {
+      const { data: existing } = await supabaseAdmin
+        .from('songs')
+        .select('song_id, title, sections, recipient_name, genre, tone, occasion, is_brand, audio_url')
+        .eq('order_id', orderId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (existing) {
+        return NextResponse.json({
+          success: true,
+          songId: existing.song_id,
+          song: existing,
+          deduped: true,
+        })
+      }
+    }
+
     // For regenerations: check regen count
     if (isRegen && existingSongId) {
       const { data: existingSong } = await supabaseAdmin

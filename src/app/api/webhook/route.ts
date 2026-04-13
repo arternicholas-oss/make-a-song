@@ -54,8 +54,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
+    // Idempotency: if Stripe retries this webhook and a song has already been
+    // generated for this order, skip re-triggering generation.
+    const { data: existingSong } = await supabaseAdmin
+      .from('songs')
+      .select('song_id')
+      .eq('order_id', order.id)
+      .limit(1)
+      .maybeSingle()
+    if (existingSong) {
+      console.log('[webhook] Song already exists for order', order.id, '- skipping regenerate')
+      return NextResponse.json({ received: true, alreadyGenerated: true })
+    }
+
     // Trigger song generation asynchronously
-    // Using fetch to our own generate endpoint so it runs in background
+    // Using fetch to our own generate endpoint so it runs in background.
+    // The generate endpoint itself has an idempotency guard, so racing
+    // webhook retries won't produce duplicate songs.
     const appUrl = process.env.NEXT_PUBLIC_APP_URL
     fetch(`${appUrl}/api/generate`, {
       method: 'POST',
