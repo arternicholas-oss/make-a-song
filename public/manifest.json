@@ -1,27 +1,64 @@
 {
-    "name": "Make a Song About You",
-    "short_name": "Song About You",
-    "description": "Answer a few questions about someone you love. We'll write them a song that could only ever be about them.",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#FFF9F0",
-    "theme_color": "#FF6B6B",
-    "orientation": "portrait-primary",
-    "scope": "/",
-    "icons": [
-          {
-                  "src": "/icons/icon-192x192.png",
-                  "sizes": "192x192",
-                  "type": "image/png",
-                  "purpose": "any maskable"
-          },
-          {
-                  "src": "/icons/icon-512x512.png",
-                  "sizes": "512x512",
-                  "type": "image/png",
-                  "purpose": "any maskable"
-          }
-    ],
-    "categories": ["entertainment", "music"],
-    "prefer_related_applications": false
+  "name": "Make a Song About You",
+  "short_name": "Song About You",
+  "description": "Answer a few questions about someone you love. We'll write them a song that could only ever be about them.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF9F0",
+  "theme_color": "#FF6B6B",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "music"],
+  "screenshots": [],
+  "prefer_related_applications": false
 }
