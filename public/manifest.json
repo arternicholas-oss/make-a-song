@@ -4,8 +4,8 @@
   "description": "Answer a few questions about someone you love. We'll write them a song that could only ever be about them.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFF9F0",
-  "theme_color": "#FF6B6B",
+  "background_color": "#FFF6E8",
+  "theme_color": "#EF6A60",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [

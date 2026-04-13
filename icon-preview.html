@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Make a Song — Icon Design</title>
+<style>
+  :root {
+    --ink: #2b1a1f;
+    --paper: #faf6ef;
+    --muted: #6b5a5f;
+    --rule: #e6ddd1;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: ui-serif, Georgia, "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 64px 32px 96px; }
+  .eyebrow {
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    text-transform: uppercase; letter-spacing: .18em; font-size: 12px;
+    color: var(--muted); margin-bottom: 14px;
+  }
+  h1 { font-size: 44px; line-height: 1.1; margin: 0 0 12px; letter-spacing: -.01em; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0 0 48px; max-width: 640px; line-height: 1.55; }
+  h2 { font-size: 22px; margin: 56px 0 18px; letter-spacing: -.005em; }
+  p { font-size: 16px; line-height: 1.65; color: #3a2a2e; max-width: 680px; }
+
+  .hero {
+    display: flex; justify-content: center; padding: 36px 0 24px;
+    border: 1px solid var(--rule); border-radius: 28px; background: #fff;
+  }
+  .hero img { width: 380px; height: 380px; border-radius: 86px; display: block; }
+
+  .sizes {
+    display: flex; gap: 28px; align-items: flex-end; flex-wrap: wrap;
+    padding: 32px; border: 1px solid var(--rule); border-radius: 20px; background: #fff;
+  }
+  .sz { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .sz img { display: block; }
+  .sz .lbl {
+    font-family: ui-sans-serif, -apple-system, sans-serif;
+    font-size: 11px; color: var(--muted); letter-spacing: .04em;
+  }
+  .sz .ios-60 { width: 60px; height: 60px; border-radius: 14px; }
+  .sz .ios-76 { width: 76px; height: 76px; border-radius: 18px; }
+  .sz .ios-120 { width: 120px; height: 120px; border-radius: 27px; }
+  .sz .ios-180 { width: 180px; height: 180px; border-radius: 41px; }
+  .sz .ios-256 { width: 256px; height: 256px; border-radius: 58px; }
+
+  /* iPhone home screen mock */
+  .phone {
+    width: 320px; height: 640px; border-radius: 56px; background: linear-gradient(180deg, #1a1a20, #2b1930);
+    padding: 22px; position: relative; box-shadow: 0 30px 60px -30px rgba(0,0,0,.4);
+  }
+  .notch {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 110px; height: 28px; background: #000; border-radius: 18px;
+  }
+  .grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 12px;
+    padding: 40px 6px 0;
+  }
+  .app { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .app .tile {
+    width: 56px; height: 56px; border-radius: 13px; background: #3a2f3a;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+  }
+  .app .name {
+    font-family: -apple-system, sans-serif; font-size: 10px; color: #f0eae4;
+  }
+  .app.ours .tile { padding: 0; background: transparent; }
+  .app.ours img { width: 56px; height: 56px; border-radius: 13px; }
+
+  .stage { display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; }
+  .stage > div:first-child { flex: 1; min-width: 360px; }
+
+  .rationale { margin-top: 40px; }
+  .rationale ul {
+    padding: 0; list-style: none; border-top: 1px solid var(--rule);
+  }
+  .rationale li {
+    padding: 18px 0; border-bottom: 1px solid var(--rule);
+    display: grid; grid-template-columns: 180px 1fr; gap: 24px;
+  }
+  .rationale li b {
+    font-family: ui-sans-serif, -apple-system, sans-serif;
+    font-weight: 600; font-size: 13px; letter-spacing: .02em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .rationale li span { font-size: 16px; line-height: 1.6; }
+
+  .callout {
+    margin-top: 48px; padding: 28px 32px; background: #fff4ea;
+    border-radius: 18px; border: 1px solid #f2d9bd;
+  }
+  .callout h3 { margin: 0 0 8px; font-size: 18px; }
+  .callout p { margin: 0; color: #5a3e25; }
+
+  footer {
+    margin-top: 64px; color: var(--muted); font-size: 13px;
+    font-family: ui-sans-serif, sans-serif;
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <div class="eyebrow">Make a Song — icon redesign</div>
+  <h1>Heart Note.</h1>
+  <p class="lede">
+    A custom song from the heart, said in one glyph. Heart reads first
+    (emotion, gift, love). The stem and flag read second (music, composition).
+    Against a warm 70s-soul gradient that anchors the brand without a single
+    word of text.
+  </p>
+
+  <div class="hero">
+    <img src="icon-design.svg" alt="Make a Song icon"/>
+  </div>
+
+  <h2>At every size it has to live at</h2>
+  <div class="sizes">
+    <div class="sz"><img class="ios-60" src="icon-design.svg"/><span class="lbl">60 — notification</span></div>
+    <div class="sz"><img class="ios-76" src="icon-design.svg"/><span class="lbl">76 — iPad</span></div>
+    <div class="sz"><img class="ios-120" src="icon-design.svg"/><span class="lbl">120 — iPhone @2x</span></div>
+    <div class="sz"><img class="ios-180" src="icon-design.svg"/><span class="lbl">180 — iPhone @3x</span></div>
+    <div class="sz"><img class="ios-256" src="icon-design.svg"/><span class="lbl">256 — App Store</span></div>
+  </div>
+
+  <h2>On a real home screen, against the competition</h2>
+  <div class="stage">
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="grid">
+        <div class="app"><div class="tile" style="background:#1DB954"></div><span class="name">Spotify</span></div>
+        <div class="app"><div class="tile" style="background:linear-gradient(135deg,#FA233B,#FB5C74)"></div><span class="name">Music</span></div>
+        <div class="app ours"><img src="icon-design.svg"/><span class="name">Make a Song</span></div>
+        <div class="app"><div class="tile" style="background:#000"></div><span class="name">Threads</span></div>
+        <div class="app"><div class="tile" style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45)"></div><span class="name">Instagram</span></div>
+        <div class="app"><div class="tile" style="background:#58CC02"></div><span class="name">Duolingo</span></div>
+        <div class="app"><div class="tile" style="background:#EA4335"></div><span class="name">Gmail</span></div>
+        <div class="app"><div class="tile" style="background:#007AFF"></div><span class="name">Messages</span></div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:320px;">
+      <h2 style="margin-top:0;">Why this wins</h2>
+      <div class="rationale">
+        <ul>
+          <li><b>Single focal point</b><span>One glyph. The eye doesn't have to work. At 60px on a cluttered home screen, you're competing for a blink — not a read.</span></li>
+          <li><b>Emotional category first</b><span>The heart does the heavy lifting. This isn't Spotify (consumption) or a DAW (creation tool). It's a <em>gift</em>. Buyers feel that before they parse it.</span></li>
+          <li><b>Differentiation</b><span>Most music apps use headphones, vinyl, or a plain note — cold, consumer-focused. Most greeting apps use a plain heart — too generic. Fusing them carves out a space nobody's in.</span></li>
+          <li><b>Warm palette anchors the brand</b><span>Gold → coral → rose reads as "70s soul" and "warmth" before you consciously notice. Cool tech blues would fight the product promise.</span></li>
+          <li><b>Legible at 60px</b><span>The stem-plus-flag holds up thanks to the negative space on the right. The heart silhouette stays intact even when the stem blurs.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h2>On "AI" — the honest answer</h2>
+  <p>
+    No. Not on the icon. Putting "AI" on an app tile is a 2023 commodity
+    move — every thin wrapper does it, and consumers have already tuned it
+    out as a gimmick signal. Your buyer isn't shopping for AI; they're
+    shopping for <em>a song that makes someone cry at their wedding</em>.
+    The emotional promise IS the differentiator.
+  </p>
+  <p>
+    Where <b>AI does belong</b>: the App Store subtitle, the landing-page
+    headline, the first store screenshot, paid-ad creative. Those are
+    where the AI-curious will actually read words. On a 60×60 home-screen
+    tile, text is illegible and premium apps never carry it — Spotify,
+    Headspace, Duolingo, Calm, Threads, Instagram all go wordless.
+  </p>
+
+  <div class="callout">
+    <h3>Production checklist</h3>
+    <p>
+      Export at 1024, 512, 384, 192, 180, 152, 144, 120, 76, 60. Replace
+      apple-touch-icon.png, icon-144/152/384, the favicon, and the
+      manifest.json icon entries. Keep this SVG as the single source of
+      truth — every raster falls out of it.
+    </p>
+  </div>
+
+  <footer>icon-design.svg · Make a Song · 2026</footer>
+</main>
+</body>
+</html>
