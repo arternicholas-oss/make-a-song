@@ -100,6 +100,29 @@ export default function App() {
     if (step === 'song') { setRevealed(false); setTimeout(() => setRevealed(true), 80) }
   }, [step, song])
 
+  // Restore saved answers + jump to review when returning from a cancelled Stripe checkout
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('cancelled') === 'true') {
+      const saved = localStorage.getItem('masay_answers')
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          setAnswers(parsed)
+          setStep('review')
+        } catch {}
+      }
+      // Clean the URL so refresh doesn't re-trigger this
+      window.history.replaceState({}, '', '/')
+    }
+  }, [])
+
+  // Scroll to top on every step change so primary CTAs are always in view
+  useEffect(() => {
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [step])
+
   const set = (k: string, v: string) => setAnswers(a => ({ ...a, [k]: v }))
   function applySurprise(s: { genre: string; tone: string }) {
     setAnswers(a => ({ ...a, genre: s.genre, tone: s.tone }))

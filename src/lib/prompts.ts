@@ -3,25 +3,26 @@ import type { PersonalAnswers, BrandAnswers, Answers } from './types'
 // ─── GENRE STYLES ─────────────────────────────────────────────────────────────
 
 export const GENRE_LABELS: Record<string, string> = {
-  '70s_love_song': '70s Love Song',
+  '70s_love_song': '70s Soul',
   '90s_rb':        '90s R&B',
   'country':       'Country',
   'hip_hop':       'Hip-Hop Tribute',
   'pop_anthem':    'Pop Anthem',
   'gospel':        'Gospel',
+  'indie_folk':    'Indie Folk',
 }
 
 const GENRE_STYLES: Record<string, string> = {
-  '70s_love_song': `Write in the style of 1970s singer-songwriter pop. Warm, unhurried, melodic, intimate.
-Think Carol King, James Taylor, Carly Simon. Flowing ABAB or AABB rhyme scheme.
+  '70s_love_song': `Write in the style of 1970s soul and singer-songwriter pop. Warm, unhurried, melodic, intimate.
+Velvet guitar lines, Rhodes piano, a vocal that takes its time. Flowing ABAB or AABB rhyme scheme.
 Imagery: warmth, road trips, seasons, soft light, analog nostalgia. Avoid modern slang.`,
 
   '90s_rb': `Write in the style of 1990s R&B. Smooth, rhythmically driven, confident, celebratory.
-Think Boyz II Men, Mariah Carey, Babyface. AABB with internal rhymes.
+Silky groove, layered harmonies, a chorus that sticks. AABB with internal rhymes.
 Groove-forward with punchy chorus lines. Warm but with swagger.`,
 
   'country': `Write in the style of classic country storytelling. Honest, grounded, conversational.
-Think Dolly Parton, Kenny Rogers, early Taylor Swift.
+Front-porch narrative, steady acoustic heartbeat, concrete detail.
 Strong narrative verses, singalong chorus, concrete imagery (trucks, porches, home cooking, small towns).
 AABB rhyme scheme. Warm without cliché.`,
 
@@ -31,15 +32,20 @@ Affectionate celebratory energy. Each line should land with confidence.
 Include a melodic hook for the chorus.`,
 
   'pop_anthem': `Write in the style of a modern pop anthem. Big, soaring, hook-forward.
-Think Katy Perry 'Roar', Taylor Swift 'Long Live', OneRepublic.
+Arena-scale drums, an exploding chorus, a bridge that gives chills.
 Verse builds, pre-chorus creates tension, chorus explodes.
 Memorable repetitive hook. AABB or ABAB rhyme.`,
 
   'gospel': `Write in the style of contemporary gospel — uplifting, powerful, soulful.
-Think Kirk Franklin, CeCe Winans. Celebratory and reverent at once.
+Full choir energy, Hammond organ swell, call-and-response phrasing.
 Rich imagery of light, grace, blessing, gratitude.
 Chorus should feel like a congregation singing together.
 Call-and-response energy in the bridge.`,
+
+  'indie_folk': `Write in the style of modern indie folk. Intimate, acoustic, emotionally honest.
+Fingerpicked guitar, a single close vocal, strings that bloom on the bridge. Sparse arrangement — every word carries weight.
+Imagery: windows, handwriting, quiet rooms, small everyday sacred moments.
+Plainspoken lyrics, gentle internal rhymes, avoid bombast. The quiet song that says the loudest thing.`,
 }
 
 // ─── PERSONAL PROMPT ─────────────────────────────────────────────────────────

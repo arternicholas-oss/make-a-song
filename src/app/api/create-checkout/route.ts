@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
         is_brand: isBrand ? 'true' : 'false',
       },
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id=${sessionId}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/create?session_id=${sessionId}&cancelled=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?session_id=${sessionId}&cancelled=true`,
       allow_promotion_codes: true,
     })
 

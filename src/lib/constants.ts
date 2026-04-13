@@ -22,43 +22,50 @@ export const GENRES = [
     id: '70s_love_song',
     label: '70s Soul',
     tagline: 'Warm. Unhurried. Timeless.',
-    desc: 'Carol King, James Taylor vibes. Melodic and intimate, built to last.',
+    desc: 'Velvet guitars, a Rhodes piano, and a lyric that takes its time. Melodic, intimate, built to last.',
     sample: '"You light up the ordinary like it\'s sacred ground…"',
   },
   {
     id: '90s_rb',
     label: '90s R&B',
     tagline: 'Smooth. Rhythmic. Celebratory.',
-    desc: 'Boyz II Men, Mariah, TLC. Groove-forward with a chorus that sticks.',
+    desc: 'Layered harmonies over a silky groove. A chorus that sticks and a bridge that swells.',
     sample: '"Every time you walk in the room, everything slows down…"',
   },
   {
     id: 'country',
     label: 'Country',
     tagline: 'Honest. Storied. Rooted.',
-    desc: 'Dolly Parton, early Taylor Swift. Front-porch storytelling that feels like home.',
+    desc: 'Front-porch storytelling with a steady acoustic heartbeat. Feels like home the first time you hear it.',
     sample: '"She\'s a dirt road and a Sunday morning, simple and right…"',
   },
   {
     id: 'hip_hop',
     label: 'Hip-Hop Tribute',
     tagline: 'Punchy. Name-dropping. Alive.',
-    desc: 'Celebratory bars, specific callouts, and a hook that hits every time.',
+    desc: 'Celebratory bars, specific callouts, and a hook that hits every time. Built for the shout-out.',
     sample: '"Let me tell you \'bout a legend, I\'ma break it down…"',
   },
   {
     id: 'pop_anthem',
     label: 'Pop Anthem',
     tagline: 'Big. Hook-forward. Unstoppable.',
-    desc: 'Katy Perry, OneRepublic. A soaring chorus and a bridge that gives you chills.',
+    desc: 'Arena-scale drums, a soaring chorus, and a bridge that gives you chills. Radio-ready from line one.',
     sample: '"You were made for more than ordinary days…"',
   },
   {
     id: 'gospel',
     label: 'Gospel',
     tagline: 'Uplifting. Powerful. Soulful.',
-    desc: 'Kirk Franklin energy. Sweeping, celebratory, rooted in deep gratitude.',
+    desc: 'Full choir energy with a Hammond organ swell. Sweeping, celebratory, rooted in deep gratitude.',
     sample: '"Every blessing in this life wears your face…"',
+  },
+  {
+    id: 'indie_folk',
+    label: 'Indie Folk',
+    tagline: 'Intimate. Acoustic. Honest.',
+    desc: 'Fingerpicked guitar, a single close vocal, and strings that bloom on the bridge. The quiet song that says the loudest thing.',
+    sample: '"If I had one more song, I\'d spend it telling you…"',
   },
 ] as const
 
@@ -105,6 +112,7 @@ export const GENRE_COLORS: Record<string, { bg: string; accent: string; dot: str
   'hip_hop':       { bg: '#E0F7FA', accent: '#4ECDC4', dot: '#00695C', grad: ['#4ECDC4', '#6BCB77'] },
   'pop_anthem':    { bg: '#FCE4EC', accent: '#FF6B9D', dot: '#C2185B', grad: ['#FF6B9D', '#C77DFF'] },
   'gospel':        { bg: '#FFFDE7', accent: '#FFD93D', dot: '#F57F17', grad: ['#FFD93D', '#FF9F43'] },
+  'indie_folk':    { bg: '#EFF6F1', accent: '#7FB069', dot: '#3E5641', grad: ['#7FB069', '#D9BF77'] },
 }
 
 // ─── SURPRISE ME COMBOS ───────────────────────────────────────────────────────
@@ -142,6 +150,7 @@ export const GENRE_LABELS: Record<string, string> = {
   'hip_hop':       'Hip-Hop Tribute',
   'pop_anthem':    'Pop Anthem',
   'gospel':        'Gospel',
+  'indie_folk':    'Indie Folk',
 }
 
 // ─── PRICE ───────────────────────────────────────────────────────────────────
