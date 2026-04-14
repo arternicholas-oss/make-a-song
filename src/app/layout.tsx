@@ -3,6 +3,7 @@ import './globals.css'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
 import { PostHogProvider } from '@/components/PostHogProvider'
 import { SiteFooter } from '@/components/SiteFooter'
+import { CapacitorNativeInit } from '@/components/CapacitorNativeInit'
 
 export const metadata: Metadata = {
   title: 'Make a Song About You — Personalized AI Song Lyrics',
@@ -66,6 +67,7 @@ export default function RootLayout({
           <SiteFooter />
         </PostHogProvider>
         <ServiceWorkerRegistration />
+        <CapacitorNativeInit />
       </body>
     </html>
   )

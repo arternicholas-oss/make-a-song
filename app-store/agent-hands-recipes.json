@@ -1,0 +1,96 @@
+{
+  "_comment": "Recipes to append into ~/.claude_runner/recipes.json. These are the Agent Hands-automatable steps of the iOS + Android store publish flow. Steps marked 'human' must be executed manually and are mirrored in Daemon_Manual_Tasks_Log.docx.",
+
+  "cap_install": {
+    "description": "Install Capacitor deps into the make-a-song project (safe to re-run)",
+    "executor": "npm",
+    "project": "make-a-song",
+    "args": ["install"]
+  },
+
+  "cap_add_ios": {
+    "description": "Generate the iOS Xcode project under ios/",
+    "executor": "terminal",
+    "project": "make-a-song",
+    "cmd": "npx cap add ios && npx cap sync ios",
+    "precondition": "cap_install",
+    "requires": ["macos", "xcode-cli-tools", "cocoapods"]
+  },
+
+  "cap_add_android": {
+    "description": "Generate the Android Studio project under android/",
+    "executor": "terminal",
+    "project": "make-a-song",
+    "cmd": "npx cap add android && npx cap sync android",
+    "precondition": "cap_install",
+    "requires": ["android-sdk", "java-17"]
+  },
+
+  "cap_sync": {
+    "description": "Re-sync web assets + Capacitor config into native projects (run after any capacitor.config.ts edit)",
+    "executor": "terminal",
+    "project": "make-a-song",
+    "cmd": "npx cap sync"
+  },
+
+  "generate_native_icons": {
+    "description": "Blast the app icon + splash across every iOS/Android size",
+    "executor": "terminal",
+    "project": "make-a-song",
+    "cmd": "npm install --save-dev @capacitor/assets && npx @capacitor/assets generate --iconBackgroundColor '#FFF6E8' --iconBackgroundColorDark '#FFF6E8' --splashBackgroundColor '#FFF6E8' --splashBackgroundColorDark '#FFF6E8'",
+    "precondition": "cap_add_ios"
+  },
+
+  "generate_screenshots": {
+    "description": "Run the Playwright screenshot generator against the live site",
+    "executor": "terminal",
+    "project": "make-a-song",
+    "cmd": "npm install --save-dev playwright && npx playwright install chromium && node app-store/screenshots/generate.mjs"
+  },
+
+  "fill_team_id_in_aasa": {
+    "description": "Replace __TEAMID__ in apple-app-site-association with the real Apple Team ID, commit, redeploy",
+    "executor": "file_edit",
+    "project": "make-a-song",
+    "path": "public/.well-known/apple-app-site-association",
+    "find": "__TEAMID__",
+    "replace_from_prompt": "apple_team_id",
+    "then": ["vercel_deploy"]
+  },
+
+  "fill_sha_in_assetlinks": {
+    "description": "Replace __SHA256_PLACEHOLDER__ in assetlinks.json with the release keystore fingerprint, commit, redeploy",
+    "executor": "file_edit",
+    "project": "make-a-song",
+    "path": "public/.well-known/assetlinks.json",
+    "find": "__SHA256_PLACEHOLDER__",
+    "from_command": "keytool -list -v -keystore ~/.android-keystores/makeasong-release.jks -alias makeasong -storepass {keystore_password} | awk '/SHA256:/ {print $2}'",
+    "then": ["vercel_deploy"]
+  },
+
+  "android_build_release_aab": {
+    "description": "Build a signed release AAB for Play Store upload",
+    "executor": "terminal",
+    "project": "make-a-song",
+    "cmd": "cd android && ./gradlew bundleRelease",
+    "output": "android/app/build/outputs/bundle/release/app-release.aab",
+    "requires": ["android/key.properties exists"],
+    "precondition": "cap_add_android"
+  },
+
+  "_not_yet_automatable": {
+    "description": "These are the things Daemon v2 needs to learn. Mirrored in Daemon_Manual_Tasks_Log.docx.",
+    "items": [
+      "Apple Developer Program enrollment (2FA, D-U-N-S, payment)",
+      "Google Play Console account creation (ID verification)",
+      "Bundle ID registration in Apple Developer portal",
+      "App Store Connect listing creation + filling in every field",
+      "Xcode archive + upload (interactive code signing)",
+      "Play Console listing creation + Data Safety form",
+      "Play Console closed test with 12+ testers for 14 days",
+      "App Review submission + responding to reviewer messages",
+      "Apple Team ID copy from developer.apple.com/account",
+      "Privacy policy + support page content authoring"
+    ]
+  }
+}

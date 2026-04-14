@@ -1,0 +1,27 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["__TEAMID__.com.makeasongaboutyou.app"],
+        "components": [
+          {
+            "/": "/song/*",
+            "comment": "Open shared song links natively"
+          },
+          {
+            "/": "/checkout/success*",
+            "comment": "Return from Stripe checkout"
+          },
+          {
+            "/": "/",
+            "comment": "Root entry"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["__TEAMID__.com.makeasongaboutyou.app"]
+  }
+}

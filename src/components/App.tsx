@@ -507,16 +507,16 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
         </div>
       </div>
 
-      {/* âââ HOW IT WORKS âââââââââââââââââââââââââââââââââââââââââââââââââââ */}
+      {/* ——— HOW IT WORKS ——————————————————————————————————————————————————— */}
       <div style={{ width: '100%', maxWidth: 720, margin: '0 auto', padding: '80px 20px 0' }}>
         <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(28px,5vw,40px)', fontWeight: 700, textAlign: 'center', marginBottom: 48, color: G.ink }}>
           How It Works
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 24 }}>
           {[
-            { num: '1', icon: 'ð¯', title: 'Pick the vibe', desc: 'Choose an occasion, genre, and tone that fits. Birthday roast? Anniversary ballad? Brand anthem? We got you.' },
-            { num: '2', icon: 'ð¬', title: 'Tell us about them', desc: 'Answer a few quick questions â their name, what makes them special, a favorite memory. The more detail, the better the song.' },
-            { num: '3', icon: 'â¨', title: 'Get your song', desc: 'AI writes original lyrics (and optional audio) personalized to every detail you shared. Ready in under 60 seconds.' },
+            { num: '1', icon: '🎯', title: 'Pick the vibe', desc: 'Choose an occasion, genre, and tone that fits. Birthday roast? Anniversary ballad? Brand anthem? We got you.' },
+            { num: '2', icon: '💬', title: 'Tell us about them', desc: 'Answer a few quick questions — their name, what makes them special, a favorite memory. The more detail, the better the song.' },
+            { num: '3', icon: '✨', title: 'Get your song', desc: 'AI writes original lyrics (and optional audio) personalized to every detail you shared. Ready in under 60 seconds.' },
           ].map((s) => (
             <div key={s.num} style={{ textAlign: 'center', padding: '24px 16px' }}>
               <div style={{ width: 56, height: 56, borderRadius: '50%', background: `linear-gradient(135deg,${G.coral}20,${G.peach}20)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 28 }}>{s.icon}</div>
@@ -527,7 +527,7 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
         </div>
       </div>
 
-      {/* âââ PRICING ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */}
+      {/* ——— PRICING ———————————————————————————————————————————————————————— */}
       <div style={{ width: '100%', maxWidth: 480, margin: '0 auto', padding: '80px 20px 0', textAlign: 'center' }}>
         <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(28px,5vw,40px)', fontWeight: 700, marginBottom: 16, color: G.ink }}>
           Simple Pricing
@@ -536,7 +536,7 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
         <div style={{ background: G.white, border: `2px solid ${G.border}`, borderRadius: 24, padding: '36px 28px', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: `linear-gradient(90deg,${G.coral},${G.peach})` }} />
           <div style={{ fontSize: 48, fontFamily: "'Fraunces',serif", fontWeight: 900, color: G.ink, marginBottom: 8 }}>{PRICE_DISPLAY}</div>
-          <div style={{ fontSize: 14, color: G.muted, marginBottom: 24 }}>per song Â· one-time payment</div>
+          <div style={{ fontSize: 14, color: G.muted, marginBottom: 24 }}>per song · one-time payment</div>
           <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
               'Original lyrics written by AI, personalized to your answers',
@@ -553,12 +553,12 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
             ))}
           </div>
           <button className="pill" onClick={onStart} style={{ marginTop: 28, width: '100%', background: `linear-gradient(135deg,${G.coral},${G.peach})`, color: '#fff', border: 'none', padding: '16px', borderRadius: 99, fontSize: 16, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 6px 24px rgba(255,107,107,0.35)' }}>
-            Make a Song â¦
+            Make a Song —¦
           </button>
         </div>
       </div>
 
-      {/* âââ FAQ âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */}
+      {/* ——— FAQ ————————————————————————————————————————————————————————————— */}
       <div style={{ width: '100%', maxWidth: 600, margin: '0 auto', padding: '80px 20px 0' }}>
         <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(28px,5vw,40px)', fontWeight: 700, textAlign: 'center', marginBottom: 40, color: G.ink }}>
           Questions?
@@ -581,7 +581,7 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
         ))}
       </div>
 
-      {/* âââ FOOTER ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */}
+      {/* ——— FOOTER —————————————————————————————————————————————————————————— */}
       <footer style={{ width: '100%', textAlign: 'center', padding: '80px 20px 40px', fontSize: 13, color: G.muted }}>
         <div style={{ marginBottom: 12 }}>
           <a href="/privacy" style={{ color: G.muted, textDecoration: 'underline', marginRight: 20 }}>Privacy Policy</a>

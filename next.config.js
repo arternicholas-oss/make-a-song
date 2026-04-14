@@ -29,6 +29,23 @@ const nextConfig = {
         },
       ],
     },
+    // Universal Links — Apple requires application/json Content-Type and
+    // no redirects on this path. Must be served from the apex domain.
+    {
+      source: '/.well-known/apple-app-site-association',
+      headers: [
+        { key: 'Content-Type', value: 'application/json' },
+        { key: 'Cache-Control', value: 'public, max-age=3600' },
+      ],
+    },
+    // Android App Links — Google's verification fetches this as JSON.
+    {
+      source: '/.well-known/assetlinks.json',
+      headers: [
+        { key: 'Content-Type', value: 'application/json' },
+        { key: 'Cache-Control', value: 'public, max-age=3600' },
+      ],
+    },
   ],
 }
 
