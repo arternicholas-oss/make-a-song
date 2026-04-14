@@ -12,6 +12,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect, useRef } from 'react'
+import { phCapture, phIdentify } from './PostHogProvider'
 import {
   OCCASIONS, GENRES, PERSONAL_TONES, BRAND_TONES,
   RELATIONSHIPS, BRAND_INDUSTRIES, GENRE_COLORS,
@@ -69,7 +70,22 @@ function getOrCreateSessionId(): string {
 }
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
-type Step = 'landing' | 'occasion' | 'genre' | 'tone' | 'questions' | 'brand_questions' | 'review' | 'loading' | 'song'
+type Step = 'landing' | 'occasion' | 'genre' | 'tone' | 'questions' | 'brand_questions' | 'review' | 'loading' | 'preview_loading' | 'preview' | 'song'
+
+interface PreviewState {
+  preview_id: string
+  title: string
+  sections: { label: string; lines: string[] }[]
+  recipient_name: string
+  genre: string
+  tone: string
+  occasion: string
+  is_brand: boolean
+  audio_url_preview?: string
+  regen_count: number
+  max_regens: number
+  regens_remaining: number
+}
 
 export default function App() {
   const [step, setStep]                       = useState<Step>('landing')
@@ -83,6 +99,9 @@ export default function App() {
   const [sendMode, setSendMode]               = useState(false)
   const [email, setEmail]                     = useState('')
   const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [preview, setPreview]                 = useState<PreviewState | null>(null)
+  const [previewError, setPreviewError]       = useState<string>('')
+  const [regenLoading, setRegenLoading]       = useState(false)
   const timer = useRef<NodeJS.Timeout | null>(null)
 
   const isBrand = answers.occasion === 'brand'
@@ -128,26 +147,106 @@ export default function App() {
     setAnswers(a => ({ ...a, genre: s.genre, tone: s.tone }))
   }
 
-  // ─── CHECKOUT ──────────────────────────────────────────────────────────────
-  async function handleCheckout() {
+  // ─── PREVIEW GENERATION ────────────────────────────────────────────────────
+  // New flow: generate a full preview (lyrics + 20s audio) BEFORE we send the
+  // buyer to Stripe. They can regenerate up to 3 extra times and only pay if
+  // they're happy with what they hear. Lyria mispronounces words often enough
+  // that this dramatically cuts refund requests.
+  async function handleGeneratePreview() {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert('Please enter a valid email so we can send you the song.')
+      return
+    }
     setCheckoutLoading(true)
+    setPreviewError('')
     const sessionId = getOrCreateSessionId()
     localStorage.setItem('masay_answers', JSON.stringify(answers))
+    localStorage.setItem('masay_email', email)
+
+    phIdentify(sessionId, { email })
+    phCapture('preview_email_submitted', { email_domain: email.split('@')[1] })
+    phCapture('preview_generation_started', { occasion: answers.occasion, genre: answers.genre })
+
+    setStep('preview_loading')
 
     try {
-      const res = await fetch('/api/create-checkout', {
+      const res = await fetch('/api/preview/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, email, answers }),
       })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        setPreviewError(data.error || 'Preview failed. Please try again.')
+        setStep('review')
+        setCheckoutLoading(false)
+        phCapture('preview_generation_failed', { error: data.error })
+        return
+      }
+      setPreview(data.preview)
+      localStorage.setItem('masay_preview_id', data.preview.preview_id)
+      setStep('preview')
+      phCapture('preview_generated', { preview_id: data.preview.preview_id })
+    } catch (err) {
+      setPreviewError('Network error. Please try again.')
+      setStep('review')
+      phCapture('preview_generation_failed', { error: 'network' })
+    } finally {
+      setCheckoutLoading(false)
+    }
+  }
 
+  // ─── PREVIEW REGENERATION ─────────────────────────────────────────────────
+  async function handleRegenPreview() {
+    if (!preview) return
+    if (preview.regens_remaining <= 0) {
+      alert('No regenerations remaining. Buy the full song to keep this one, or start fresh.')
+      return
+    }
+    setRegenLoading(true)
+    try {
+      const res = await fetch('/api/preview/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          previewId: preview.preview_id,
+          sessionId: getOrCreateSessionId(),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        alert(data.error || 'Regenerate failed. Please try again.')
+        return
+      }
+      setPreview(data.preview)
+      phCapture('preview_regenerated', { preview_id: preview.preview_id, attempt: data.preview.regen_count })
+    } catch {
+      alert('Network error. Please try again.')
+    } finally {
+      setRegenLoading(false)
+    }
+  }
+
+  // ─── CHECKOUT FROM PREVIEW ────────────────────────────────────────────────
+  async function handleCheckout() {
+    if (!preview) return
+    setCheckoutLoading(true)
+    phCapture('checkout_started', { preview_id: preview.preview_id })
+    try {
+      const res = await fetch('/api/preview/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          previewId: preview.preview_id,
+          sessionId: getOrCreateSessionId(),
+        }),
+      })
       const { url, error } = await res.json()
       if (error || !url) {
         alert('Something went wrong starting checkout. Please try again.')
         setCheckoutLoading(false)
         return
       }
-
       window.location.href = url
     } catch {
       alert('Something went wrong. Please try again.')
@@ -252,8 +351,20 @@ export default function App() {
         {step === 'tone'            && <ToneStep answers={answers} set={set} onBack={() => setStep('genre')} onNext={afterTone} isBrand={isBrand} />}
         {step === 'questions'       && <QuestionsStep answers={answers} set={set} onBack={() => setStep('tone')} onNext={() => setStep('review')} />}
         {step === 'brand_questions' && <BrandQuestionsStep answers={answers} set={set} onBack={() => setStep('tone')} onNext={() => setStep('review')} />}
-        {step === 'review'          && <ReviewStep answers={answers} onBack={() => setStep(isBrand ? 'brand_questions' : 'questions')} onGenerate={handleCheckout} onTestGenerate={handleTestGenerate} isBrand={isBrand} loading={checkoutLoading} />}
+        {step === 'review'          && <ReviewStep answers={answers} email={email} setEmail={setEmail} onBack={() => setStep(isBrand ? 'brand_questions' : 'questions')} onGenerate={handleGeneratePreview} onTestGenerate={handleTestGenerate} isBrand={isBrand} loading={checkoutLoading} previewError={previewError} />}
         {step === 'loading'         && <LoadingScreen loadLine={loadLine} isBrand={isBrand} />}
+        {step === 'preview_loading' && <PreviewLoadingScreen isBrand={isBrand} />}
+        {step === 'preview' && preview && (
+          <PreviewStep
+            preview={preview}
+            isBrand={isBrand}
+            regenLoading={regenLoading}
+            checkoutLoading={checkoutLoading}
+            onRegen={handleRegenPreview}
+            onCheckout={handleCheckout}
+            onBack={() => setStep('review')}
+          />
+        )}
         {step === 'song' && song && !tiktokMode && !sendMode && (
           <SongScreen song={song} answers={answers} revealed={revealed} regenCount={regenCount} copied={copied}
             onRegen={async () => { if (regenCount < 1) { setRegenCount(c => c + 1) } }}
@@ -701,7 +812,8 @@ function BrandQuestionsStep({ answers, set, onBack, onNext }: { answers: Record<
 }
 
 // ─── REVIEW ───────────────────────────────────────────────────────────────────
-function ReviewStep({ answers, onBack, onGenerate, onTestGenerate, isBrand, loading }: { answers: Record<string, string>; onBack: () => void; onGenerate: () => void; onTestGenerate: () => void; isBrand: boolean; loading: boolean }) {
+function ReviewStep({ answers, email, setEmail, onBack, onGenerate, onTestGenerate, isBrand, loading, previewError }: { answers: Record<string, string>; email: string; setEmail: (v: string) => void; onBack: () => void; onGenerate: () => void; onTestGenerate: () => void; isBrand: boolean; loading: boolean; previewError?: string }) {
+  const emailValid = !!email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   const personalRows = [
     ['For', answers.recipient_name], ['From', answers.sender_name || '—'],
     ['Occasion', answers.occasion?.replace(/_/g, ' ')], ['Genre', GENRE_LABELS[answers.genre]],
@@ -731,12 +843,44 @@ function ReviewStep({ answers, onBack, onGenerate, onTestGenerate, isBrand, load
           </div>
         ))}
       </div>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: G.muted, fontSize: 13, cursor: 'pointer', textDecoration: 'underline', marginBottom: 24, padding: 0 }}>← Edit answers</button>
-      <button className="pill" onClick={onGenerate} disabled={loading}
-        style={{ width: '100%', background: loading ? G.border : `linear-gradient(135deg,${isBrand ? G.navy : G.coral},${isBrand ? G.navyL : G.peach})`, color: loading ? G.muted : '#fff', border: 'none', padding: '18px', borderRadius: 99, fontSize: 17, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', boxShadow: loading ? 'none' : `0 6px 24px ${isBrand ? 'rgba(27,42,74,0.35)' : 'rgba(255,107,107,0.4)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-        {loading ? 'Starting checkout…' : `✦ ${isBrand ? 'Write My Theme Song' : 'Write My Song'} — ${PRICE_DISPLAY}`}
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: G.muted, fontSize: 13, cursor: 'pointer', textDecoration: 'underline', marginBottom: 20, padding: 0 }}>← Edit answers</button>
+
+      {/* Email capture — required to generate a preview so we can email the
+          final song if they buy. Gates the preview (and our Lyria cost). */}
+      <div style={{ background: G.white, border: `2px solid ${G.border}`, borderRadius: 16, padding: 18, marginBottom: 16 }}>
+        <label htmlFor="preview_email" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: G.ink, marginBottom: 8 }}>
+          Your email (to save &amp; send your song)
+        </label>
+        <input
+          id="preview_email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          style={{
+            width: '100%', padding: '12px 14px', border: `1.5px solid ${G.border}`, borderRadius: 10,
+            fontSize: 15, fontFamily: 'inherit', color: G.ink, background: G.bg,
+          }}
+        />
+        <div style={{ fontSize: 12, color: G.muted, marginTop: 8, lineHeight: 1.5 }}>
+          We send you the song here if you buy. No spam; see our <a href="/privacy" style={{ color: G.coral }}>Privacy Policy</a>.
+        </div>
+      </div>
+
+      {previewError && (
+        <div style={{ background: '#FEE', border: '1.5px solid #FCA5A5', color: '#991B1B', borderRadius: 12, padding: '10px 14px', fontSize: 13, marginBottom: 14 }}>
+          {previewError}
+        </div>
+      )}
+
+      <button className="pill" onClick={onGenerate} disabled={loading || !emailValid}
+        style={{ width: '100%', background: (loading || !emailValid) ? G.border : `linear-gradient(135deg,${isBrand ? G.navy : G.coral},${isBrand ? G.navyL : G.peach})`, color: (loading || !emailValid) ? G.muted : '#fff', border: 'none', padding: '18px', borderRadius: 99, fontSize: 17, fontWeight: 700, cursor: (loading || !emailValid) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', boxShadow: (loading || !emailValid) ? 'none' : `0 6px 24px ${isBrand ? 'rgba(27,42,74,0.35)' : 'rgba(255,107,107,0.4)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+        {loading ? 'Writing your preview…' : `✦ Preview My Song · Free`}
       </button>
-      <p style={{ textAlign: 'center', fontSize: 13, color: G.muted, marginTop: 12 }}>Secure checkout via Stripe · Apple Pay &amp; Google Pay accepted</p>
+      <p style={{ textAlign: 'center', fontSize: 13, color: G.muted, marginTop: 12, lineHeight: 1.5 }}>
+        Free preview · lyrics + 20-second audio · you only pay ({PRICE_DISPLAY}) if you love it
+      </p>
       {process.env.NODE_ENV !== 'production' && (
         <button onClick={onTestGenerate} disabled={loading} style={{
           width: '100%', padding: '14px 0', borderRadius: 99, border: `2px dashed ${G.muted}`,
@@ -1100,6 +1244,192 @@ function Sel({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElemen
         {children}
       </select>
       <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: G.muted }}>▾</span>
+    </div>
+  )
+}
+
+
+// ─── PREVIEW LOADING ──────────────────────────────────────────────────────────
+// Shown while /api/preview/generate is working. Similar to the paid-flow
+// loading screen but with different copy reflecting that this is free.
+function PreviewLoadingScreen({ isBrand }: { isBrand: boolean }) {
+  const lines = [
+    'Writing your lyrics… ✍️',
+    'Sending to Lyria… 🎹',
+    'Recording a 20-second snippet… 🎤',
+    'Almost there… ✨',
+  ]
+  const [idx, setIdx] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setIdx(i => (i + 1) % lines.length), 1800)
+    return () => clearInterval(t)
+  }, [])
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
+      <div style={{ position: 'relative', width: 110, height: 110, marginBottom: 40 }}>
+        <div style={{ width: 110, height: 110, borderRadius: '50%', background: isBrand ? `conic-gradient(${G.navy},${G.navyL},${G.sky},${G.navy})` : `conic-gradient(${G.coral},${G.yellow},${G.mint},${G.sky},${G.lavender},${G.peach},${G.coral})`, animation: 'spin 1.8s linear infinite' }} />
+        <div style={{ position: 'absolute', top: '22%', left: '22%', right: '22%', bottom: '22%', borderRadius: '50%', background: G.white }} />
+        <div style={{ position: 'absolute', top: '44%', left: '44%', right: '44%', bottom: '44%', borderRadius: '50%', background: isBrand ? G.navy : G.ink }} />
+      </div>
+      <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 32, fontWeight: 700, color: G.ink, marginBottom: 14 }}>
+        Making your preview…
+      </h2>
+      <p style={{ fontSize: 16, color: G.muted, animation: 'pulse 1.8s ease infinite', maxWidth: 420 }}>
+        {lines[idx]}
+      </p>
+      <p style={{ fontSize: 13, color: G.muted, marginTop: 40, maxWidth: 420 }}>
+        This usually takes 45–90 seconds. Hang tight — no payment required yet.
+      </p>
+    </div>
+  )
+}
+
+// ─── PREVIEW STEP ─────────────────────────────────────────────────────────────
+// The money step. User sees full lyrics + a 20s audio clip, can regenerate
+// up to MAX_REGENS times, and either buys or drops off. This is where our
+// Lyria $$ has already been spent, so we want to make buying feel easy.
+function PreviewStep({ preview, isBrand, regenLoading, checkoutLoading, onRegen, onCheckout, onBack }: {
+  preview: PreviewState
+  isBrand: boolean
+  regenLoading: boolean
+  checkoutLoading: boolean
+  onRegen: () => void
+  onCheckout: () => void
+  onBack: () => void
+}) {
+  const displayName = preview.recipient_name
+  const accentColor = isBrand ? G.navy : G.coral
+  const gc = GENRE_COLORS[preview.genre] || GENRE_COLORS['70s_love_song']
+  const gradColors = isBrand ? [G.navy, G.navyL] : gc.grad
+
+  // Cache-bust the audio url whenever regen_count changes so the <audio>
+  // element refetches instead of serving a cached clip.
+  const audioSrc = preview.audio_url_preview
+    ? `${preview.audio_url_preview}${preview.audio_url_preview.includes('?') ? '&' : '?'}v=${preview.regen_count}`
+    : undefined
+
+  return (
+    <div style={{ minHeight: '100vh', padding: '36px 20px 100px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 660 }}>
+
+        {/* Preview banner */}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+          <span style={{ background: `${G.yellow}40`, color: '#b45309', fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '6px 14px', borderRadius: 99 }}>
+            👀 Free Preview
+          </span>
+          <span style={{ fontSize: 13, color: G.muted }}>
+            {preview.regens_remaining} regeneration{preview.regens_remaining === 1 ? '' : 's'} left
+          </span>
+        </div>
+
+        {/* Album cover + audio */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ background: `linear-gradient(135deg,${gradColors[0]},${gradColors[1]})`, borderRadius: 28, padding: '48px 36px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }} />
+            <div style={{ position: 'absolute', bottom: -30, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+            <div style={{ fontSize: 32, marginBottom: 12 }}>{isBrand ? '🏢' : '🎵'}</div>
+            <h1 style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(28px,6vw,48px)', fontWeight: 900, fontStyle: 'italic', color: '#fff', lineHeight: 1.1, marginBottom: 14, textShadow: '0 2px 20px rgba(0,0,0,0.2)' }}>
+              {preview.title}
+            </h1>
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
+              {isBrand ? `A theme song for ${displayName}` : `written for ${displayName}`}
+            </p>
+
+            {audioSrc ? (
+              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 12 }}>🎶 20-second preview</div>
+                <audio
+                  key={preview.regen_count}
+                  controls
+                  onPlay={() => phCapture('preview_played', { preview_id: preview.preview_id })}
+                  style={{ width: '100%', height: 44, borderRadius: 8, outline: 'none' }}
+                  src={audioSrc}
+                />
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 10 }}>
+                  Full ~60-second track unlocks after purchase
+                </p>
+              </div>
+            ) : (
+              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.2)', fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>
+                Audio rendering is taking longer than usual — regenerate to try again.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Lyrics */}
+        <div style={{ background: G.white, border: `2px solid ${G.border}`, borderRadius: 24, overflow: 'hidden', marginBottom: 24 }}>
+          {preview.sections.map((sec, si) => (
+            <div key={si} style={{ padding: '28px 32px', borderBottom: si < preview.sections.length - 1 ? `1px solid ${G.border}` : 'none' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: G.muted, marginBottom: 14 }}>{sec.label}</div>
+              {sec.lines.map((line, li) => {
+                const isChorus = sec.label?.toLowerCase().includes('chorus') || sec.label?.toLowerCase().includes('outro')
+                return (
+                  <div key={li} style={{ fontFamily: "'Fraunces',serif", fontSize: isChorus ? 'clamp(19px,3.5vw,24px)' : 'clamp(16px,3vw,20px)', fontWeight: isChorus ? 700 : 400, lineHeight: 1.65, color: isChorus ? accentColor : G.ink }}>
+                    {line}
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+          <button
+            onClick={onRegen}
+            disabled={regenLoading || preview.regens_remaining <= 0}
+            style={{
+              flex: '1 1 auto',
+              background: G.white,
+              border: `2px solid ${preview.regens_remaining <= 0 ? G.border : G.ink}`,
+              color: preview.regens_remaining <= 0 ? G.muted : G.ink,
+              padding: '14px 20px',
+              borderRadius: 99,
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: (regenLoading || preview.regens_remaining <= 0) ? 'not-allowed' : 'pointer',
+              opacity: regenLoading ? 0.6 : 1,
+            }}
+          >
+            {regenLoading
+              ? 'Regenerating…'
+              : preview.regens_remaining <= 0
+                ? 'No regenerations left'
+                : `🔄 Regenerate audio (${preview.regens_remaining} left)`}
+          </button>
+        </div>
+
+        <button
+          className="pill"
+          onClick={onCheckout}
+          disabled={checkoutLoading}
+          style={{
+            width: '100%',
+            background: checkoutLoading ? G.border : `linear-gradient(135deg,${isBrand ? G.navy : G.coral},${isBrand ? G.navyL : G.peach})`,
+            color: checkoutLoading ? G.muted : '#fff',
+            border: 'none',
+            padding: '18px',
+            borderRadius: 99,
+            fontSize: 17,
+            fontWeight: 700,
+            cursor: checkoutLoading ? 'not-allowed' : 'pointer',
+            boxShadow: checkoutLoading ? 'none' : `0 6px 24px ${isBrand ? 'rgba(27,42,74,0.35)' : 'rgba(255,107,107,0.4)'}`,
+          }}
+        >
+          {checkoutLoading ? 'Starting checkout…' : `✦ Unlock the Full Song — ${PRICE_DISPLAY}`}
+        </button>
+
+        <p style={{ textAlign: 'center', fontSize: 13, color: G.muted, marginTop: 12, lineHeight: 1.5 }}>
+          Unlocks the full-length audio · delivered to your email · secure checkout via Stripe
+        </p>
+
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
+          <button onClick={onBack} style={{ background: 'none', border: 'none', color: G.muted, fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+            ← Back to answers
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

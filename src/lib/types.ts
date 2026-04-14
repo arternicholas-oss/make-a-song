@@ -80,3 +80,58 @@ export interface SongRow extends Song {
   regen_count: number
   audio_url?: string
 }
+
+// ─── PREVIEW (pre-purchase) ───────────────────────────────────────────────────
+
+export interface PreviewRow {
+  id: string
+  preview_id: string
+  session_id: string
+  email: string
+  ip?: string
+  occasion: string
+  genre: string
+  tone?: string
+  brand_tone?: string
+  is_brand: boolean
+  answers: Answers
+  title?: string
+  sections?: SongSection[]
+  audio_url_preview?: string     // PUBLIC 20s clip URL
+  audio_path_preview?: string
+  audio_url_full?: string        // signed URL, server-only
+  audio_path_full?: string
+  regen_count: number
+  max_regens: number
+  purchased: boolean
+  promoted_song_id?: string
+  created_at: string
+  updated_at: string
+  expires_at: string
+}
+
+// Shape returned to the client after a preview gen/regen. Never exposes the
+// full audio URL or storage paths.
+export interface PreviewPublic {
+  preview_id: string
+  title: string
+  sections: SongSection[]
+  recipient_name: string
+  genre: string
+  tone: string
+  occasion: string
+  is_brand: boolean
+  audio_url_preview?: string
+  regen_count: number
+  max_regens: number
+  regens_remaining: number
+}
+
+export type OrderStatus =
+  | 'draft'
+  | 'paid'
+  | 'generating'
+  | 'completed'
+  | 'failed'
+  | 'refunded'
+

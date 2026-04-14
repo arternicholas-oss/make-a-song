@@ -1,42 +1,90 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+/**
+ * Gated audio proxy.
+ *
+ * The full-length audio lives in the PRIVATE `songs-audio-private` bucket
+ * (or legacy `songs-audio` for pre-migration songs). We:
+ *   1. Look up the song and its parent order
+ *   2. Refuse to serve unless order.status == 'completed' AND order.paid
+ *   3. Create a short-lived signed URL to the underlying storage object
+ *   4. Proxy the bytes (so the signed URL never reaches the browser)
+ *
+ * Pre-purchase clients should use audio_url_preview from the preview row
+ * (20s clip in the public bucket), not this endpoint.
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: { songId: string } }
 ) {
   const { songId } = params
+  if (!songId) {
+    return NextResponse.json({ error: 'Missing songId' }, { status: 400 })
+  }
 
-  // Look up song to get audio URL
-  const { data: song, error } = await supabaseAdmin
+  // Look up song + linked order.
+  const { data: song, error: songErr } = await supabaseAdmin
     .from('songs')
-    .select('audio_url')
+    .select('song_id, order_id, audio_url, preview_id')
     .eq('song_id', songId)
     .single()
 
-  if (error || !song?.audio_url) {
+  if (songErr || !song) {
+    return NextResponse.json({ error: 'Song not found' }, { status: 404 })
+  }
+
+  let paid = false
+  if (song.order_id) {
+    const { data: order } = await supabaseAdmin
+      .from('orders')
+      .select('paid, status')
+      .eq('id', song.order_id)
+      .single()
+    paid = !!order?.paid && (order?.status ? ['paid', 'generating', 'completed'].includes(order.status) : true)
+  }
+
+  if (!paid) {
+    return NextResponse.json({ error: 'Audio locked — purchase to unlock' }, { status: 402 })
+  }
+
+  // Resolve the audio bytes. Preferred source: songs-audio-private bucket at
+  // {preview_id}.mp3 (signed URL). Fallback: legacy public audio_url.
+  let audioUrl = ''
+  let contentType = 'audio/mpeg'
+
+  if (song.preview_id) {
+    const path = `${song.preview_id}.mp3`
+    const { data: signed } = await supabaseAdmin.storage
+      .from('songs-audio-private')
+      .createSignedUrl(path, 300)   // 5 min
+    if (signed?.signedUrl) audioUrl = signed.signedUrl
+  }
+
+  if (!audioUrl && song.audio_url) {
+    audioUrl = song.audio_url
+  }
+
+  if (!audioUrl) {
     return NextResponse.json({ error: 'Audio not found' }, { status: 404 })
   }
 
-  // Fetch the audio from Supabase storage
-  const audioRes = await fetch(song.audio_url)
+  const audioRes = await fetch(audioUrl)
   if (!audioRes.ok) {
     return NextResponse.json({ error: 'Failed to fetch audio' }, { status: 502 })
   }
 
   const audioBuffer = await audioRes.arrayBuffer()
+  contentType =
+    audioRes.headers.get('content-type') ||
+    (audioUrl.endsWith('.wav') ? 'audio/wav' : 'audio/mpeg')
 
-  // Detect content type from URL extension or response header
-  const contentType = audioRes.headers.get('content-type') ||
-    (song.audio_url.endsWith('.wav') ? 'audio/wav' : 'audio/mpeg')
-
-  // Check if download was requested
   const dl = req.nextUrl.searchParams.get('dl')
   const headers: Record<string, string> = {
     'Content-Type': contentType,
     'Content-Length': audioBuffer.byteLength.toString(),
     'Accept-Ranges': 'bytes',
-    'Cache-Control': 'public, max-age=86400',
+    'Cache-Control': 'private, max-age=3600',
   }
   if (dl) {
     headers['Content-Disposition'] = `attachment; filename="${songId}.mp3"`

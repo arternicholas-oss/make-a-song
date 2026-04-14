@@ -208,3 +208,9 @@ export function generateSongId(): string {
   const rand = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
   return `sng_${rand}`
 }
+
+export function generatePreviewId(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  const rand = Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  return `prv_${rand}`
+}

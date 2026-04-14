@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
+import { PostHogProvider } from '@/components/PostHogProvider'
+import { SiteFooter } from '@/components/SiteFooter'
 
 export const metadata: Metadata = {
   title: 'Make a Song About You — Personalized AI Song Lyrics',
@@ -59,7 +61,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body className="bg-cream min-h-screen font-sans">
-        {children}
+        <PostHogProvider>
+          {children}
+          <SiteFooter />
+        </PostHogProvider>
         <ServiceWorkerRegistration />
       </body>
     </html>
