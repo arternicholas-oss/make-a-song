@@ -54,6 +54,18 @@ create policy "Service role manages previews"
   on previews for all
   using (auth.role() = 'service_role');
 
+-- Defensively (re)create the updated_at trigger function so this migration
+-- can run standalone on a fresh install. Harmless if already defined by
+-- supabase-schema.sql.
+create or replace function update_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists previews_updated_at on previews;
 create trigger previews_updated_at
   before update on previews
   for each row execute function update_updated_at();
@@ -134,6 +146,7 @@ create policy "Service role manages ip_rate_limit"
 alter table songs add column if not exists audio_url text;
 alter table songs add column if not exists preview_id text;
 alter table songs add column if not exists email text;
+alter table songs add column if not exists email_sent_at timestamptz;   -- idempotency for song-ready email
 
 create index if not exists songs_preview_id_idx on songs(preview_id);
 

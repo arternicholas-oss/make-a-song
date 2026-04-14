@@ -80,10 +80,46 @@ export async function POST(req: NextRequest) {
         await flushServer()
         return NextResponse.json({ received: true, songId: promoted.songId, flow: 'preview_first' })
       }
-      // Fall through to legacy generate flow if promote failed for any reason.
-      if (promoted.ok !== true) {
-        console.error('[webhook] promote failed, falling back to legacy generate:', promoted.error)
+
+      // B2 fix: promote failed. Do NOT silently regenerate a brand-new song
+      // via the legacy /api/generate path — that would deliver a song that
+      // doesn't match the preview the customer paid for. Flag the order as
+      // failed and let the failure-monitor cron auto-refund and email the
+      // customer.
+      const promoteErr = promoted.ok === false ? promoted.error : 'unknown'
+      console.error('[webhook] promote failed — flagging order as failed for auto-refund:', promoteErr)
+      await supabaseAdmin
+        .from('orders')
+        .update({
+          status: 'failed',
+          failed_at: new Date().toISOString(),
+          failure_reason: `promote_failed: ${promoteErr}`.slice(0, 200),
+        })
+        .eq('id', order.id)
+      serverCapture(sessionId, EVT.GENERATION_FAILED, {
+        order_id: order.id,
+        preview_id: previewId,
+        reason: 'promote_failed',
+      })
+      // Kick the refund immediately instead of waiting for the cron sweep, so
+      // the customer sees the apology email in seconds, not up to a minute.
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL
+      const adminToken = process.env.REFUND_ADMIN_TOKEN
+      if (appUrl && adminToken) {
+        fetch(`${appUrl}/api/refund`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-refund-admin-token': adminToken,
+          },
+          body: JSON.stringify({
+            sessionId,
+            reason: 'auto_refund_promote_failed',
+          }),
+        }).catch(err => console.error('[webhook] refund trigger failed:', err))
       }
+      await flushServer()
+      return NextResponse.json({ received: true, flow: 'promote_failed', willRefund: true })
     }
 
     // ─── LEGACY FLOW (no preview, kick off generation) ───────────────────────
@@ -202,9 +238,13 @@ async function promotePreviewToSong(
 
   // Fire the post-purchase email (fire-and-forget so webhook stays fast).
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  const internalSecret = process.env.INTERNAL_API_SECRET || process.env.REFUND_ADMIN_TOKEN || ''
   fetch(`${appUrl}/api/email/song-ready`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-internal-secret': internalSecret,
+    },
     body: JSON.stringify({ songId }),
   }).catch(err => console.error('[webhook] email trigger failed:', err))
 

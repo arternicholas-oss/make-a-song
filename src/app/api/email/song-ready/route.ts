@@ -14,6 +14,15 @@ const resend = new Resend(process.env.RESEND_API_KEY || '')
  */
 export async function POST(req: NextRequest) {
   try {
+    // H1 fix: this endpoint is for internal server-to-server calls only
+    // (webhook → song-ready). Without a gate, anyone can POST a guessed
+    // songId and burn Resend credits. Require an internal secret; fall
+    // back to REFUND_ADMIN_TOKEN so we don't introduce yet another env var.
+    const internalSecret = process.env.INTERNAL_API_SECRET || process.env.REFUND_ADMIN_TOKEN
+    if (internalSecret && req.headers.get('x-internal-secret') !== internalSecret) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { songId } = await req.json()
     if (!songId) return NextResponse.json({ error: 'Missing songId' }, { status: 400 })
 
@@ -24,6 +33,12 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (!song) return NextResponse.json({ error: 'Song not found' }, { status: 404 })
+
+    // H2 fix: if we've already emailed this song, don't send again. Webhook
+    // retries and cron re-scans could otherwise double-send.
+    if ((song as any).email_sent_at) {
+      return NextResponse.json({ ok: true, alreadySent: true })
+    }
 
     const to = (song as any).email || (song as any).orders?.email
     if (!to) return NextResponse.json({ error: 'No email on record' }, { status: 400 })
@@ -89,6 +104,13 @@ export async function POST(req: NextRequest) {
   </div>
 </body></html>`,
     })
+
+    // Mark as sent so subsequent calls (webhook retry, cron, manual trigger)
+    // short-circuit. Fire-and-forget; duplicate email is better than lost mark.
+    await supabaseAdmin
+      .from('songs')
+      .update({ email_sent_at: new Date().toISOString() })
+      .eq('song_id', songId)
 
     return NextResponse.json({ ok: true })
   } catch (err) {

@@ -50,6 +50,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Already purchased' }, { status: 409 })
     }
 
+    // B1 fix: block checkout on audio-less previews. Lyria failures during
+    // generation leave audio_path_full null. Allowing checkout here means the
+    // user pays for a song they'll never hear — immediate refund territory.
+    if (!preview.audio_path_full) {
+      return NextResponse.json(
+        { error: 'Audio not ready. Please regenerate the preview and try again.' },
+        { status: 409 }
+      )
+    }
+
     const isBrand = preview.is_brand
     const recipientName = isBrand
       ? (preview.answers as any).brand_name

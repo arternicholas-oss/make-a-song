@@ -41,6 +41,14 @@ Production and Preview environments. Restart the deployment after adding.
 | `NEXT_PUBLIC_POSTHOG_HOST`| `https://us.i.posthog.com` (or your region).                     |
 | `POSTHOG_API_KEY`         | Same as NEXT_PUBLIC for server-side; or a distinct server key.   |
 | `RESEND_FROM_EMAIL`       | `songs@makeasongaboutyou.com` (default). Must match verified domain. |
+| `INTERNAL_API_SECRET`     | Random 32+ char string (optional). Gates `/api/email/song-ready`. Falls back to `REFUND_ADMIN_TOKEN` if unset. |
+
+**Rate-limit note:** `src/lib/rate-limit.ts` parses `x-forwarded-for` from the
+request. On Vercel this is set from the real connecting IP at edge ingress, so
+trust-boundary is fine. If you ever host this somewhere other than Vercel
+(Cloudflare Workers, Fly, etc.), you must verify that layer strips/rewrites
+`x-forwarded-for` before this code runs, or clients can trivially spoof IPs to
+evade rate limits.
 
 Already-required vars that should already be set: `ANTHROPIC_API_KEY`,
 `GEMINI_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
