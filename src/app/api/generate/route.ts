@@ -152,10 +152,13 @@ export async function POST(req: NextRequest) {
       // Convert base64 to buffer for upload
       const audioBuffer = Buffer.from(musicResponse.audioBase64, 'base64')
 
-      // Upload to Supabase Storage
+      // M1 fix: upload to PRIVATE bucket. Keyed on song_id so /api/audio can
+      // resolve the object without a preview_id. audio_url still gets a
+      // 7-day signed URL for email/back-compat — /api/audio re-signs fresh
+      // with a short TTL on every request.
       const audioPath = `${songId}.mp3`
       const { error: uploadError } = await supabaseAdmin.storage
-        .from('songs-audio')
+        .from('songs-audio-private')
         .upload(audioPath, audioBuffer, {
           contentType: musicResponse.mimeType,
           upsert: true,
@@ -164,19 +167,17 @@ export async function POST(req: NextRequest) {
       if (uploadError) {
         console.error('Audio upload error:', uploadError)
       } else {
-        // Get public URL
-        const { data } = supabaseAdmin.storage.from('songs-audio').getPublicUrl(audioPath)
-        audioUrl = data?.publicUrl
+        const { data: signed } = await supabaseAdmin.storage
+          .from('songs-audio-private')
+          .createSignedUrl(audioPath, 60 * 60 * 24 * 7)
+        audioUrl = signed?.signedUrl
 
         if (audioUrl) {
-          console.log('Audio uploaded successfully:', audioUrl)
-
-          // Update song with audio_url
+          console.log('Audio uploaded successfully (private bucket):', songId)
           const { error: updateError } = await supabaseAdmin
             .from('songs')
             .update({ audio_url: audioUrl })
             .eq('song_id', songId)
-
           if (updateError) {
             console.error('Failed to update song with audio URL:', updateError)
           }

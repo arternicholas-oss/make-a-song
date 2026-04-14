@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import { Resend } from 'resend'
 import { supabaseAdmin } from '@/lib/supabase'
 import { serverCapture, EVT, flushServer } from '@/lib/posthog'
+import { htmlEscape } from '@/lib/html'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
           html: `<div style="font-family:'DM Sans',Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#FFF9F0;color:#1a1410;">
             <h1 style="font-size:26px;margin:0 0 16px;">Your refund is processing</h1>
             <p style="font-size:16px;line-height:1.6;color:#1a1410;">We've just refunded your order in full ($14.99). It'll land back on your card in 5–10 business days.</p>
-            ${reason ? `<p style="font-size:14px;color:#9A8F88;">Reason: ${reason}</p>` : ''}
+            ${reason ? `<p style="font-size:14px;color:#9A8F88;">Reason: ${htmlEscape(reason)}</p>` : ''}
             <p style="font-size:14px;color:#9A8F88;margin-top:24px;">If you have any questions, just reply to this email.</p>
             <p style="font-size:12px;color:#9A8F88;margin-top:32px;">— Make a Song About You</p>
           </div>`,

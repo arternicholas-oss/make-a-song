@@ -119,6 +119,15 @@ export default function App() {
     if (step === 'song') { setRevealed(false); setTimeout(() => setRevealed(true), 80) }
   }, [step, song])
 
+  // M3: fire funnel events when the user crosses key step boundaries. These
+  // were declared in @/lib/posthog but never fired from the client.
+  useEffect(() => {
+    if (step === 'landing') phCapture('landing_viewed')
+    if (step === 'occasion') phCapture('quiz_started')
+    if (step === 'review') phCapture('quiz_completed', { is_brand: isBrand })
+    if (step === 'song') phCapture('song_viewed', { song_id: song?.songId })
+  }, [step, isBrand, song?.songId])
+
   // Restore saved answers + jump to review when returning from a cancelled Stripe checkout
   useEffect(() => {
     if (typeof window === 'undefined') return

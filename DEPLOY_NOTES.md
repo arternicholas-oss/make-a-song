@@ -67,9 +67,32 @@ Add to `vercel.json` (create if missing):
 }
 ```
 
+Also add the preview cleanup cron (daily is fine):
+
+```json
+{
+  "crons": [
+    { "path": "/api/monitor/failures", "schedule": "*/1 * * * *" },
+    { "path": "/api/monitor/cleanup-previews", "schedule": "0 6 * * *" }
+  ]
+}
+```
+
 Then set the `x-cron-secret` header on the cron call. Vercel Cron supports
 sending a custom header via `CRON_SECRET` via the dashboard Cron settings, or
 you can move the check to compare against a URL query param if that's easier.
+
+### Known quirk: order.preview_id drift
+
+The `orders` row is keyed by `session_id`, and we upsert on that key. If a user
+creates preview A, abandons checkout, then generates preview B in the same
+browser session and checks out on B, the order row's `preview_id` will have
+been overwritten to B by `/api/preview/checkout`. The webhook promotes B (the
+one they actually paid for) correctly via the Stripe metadata `preview_id`,
+which is snapshotted at checkout-session creation time — so the drift is
+cosmetic on the `orders.preview_id` column only. Keep this in mind when
+debugging: trust Stripe metadata for "what did they pay for", not
+`orders.preview_id`.
 
 ## 5. DNS records for email deliverability (GoDaddy)
 

@@ -65,6 +65,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Preview already purchased' }, { status: 409 })
     }
 
+    // M4: reject expired previews. The cleanup cron will eventually delete
+    // them, but until then we refuse regen so we don't burn Lyria credits on
+    // rows that are about to be garbage-collected.
+    if (preview.expires_at && new Date(preview.expires_at) < new Date()) {
+      return NextResponse.json(
+        { error: 'Preview expired. Please start a new song.' },
+        { status: 410 }
+      )
+    }
+
     if (preview.regen_count >= preview.max_regens) {
       return NextResponse.json(
         { error: 'Regeneration limit reached. Purchase to keep it, or start a new song.' },

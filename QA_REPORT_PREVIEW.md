@@ -115,4 +115,18 @@ Applied (in commit following this report):
 
 Typecheck clean after fixes.
 
-All MEDIUM / LOW items tracked; fine to ship.
+Second round (Medium + Low, same commit as M/L rollup):
+
+- **M1** — legacy `/api/generate` and `/api/test-generate` now upload to the private `songs-audio-private` bucket under `{songId}.mp3` and store a 7-day signed URL on `songs.audio_url`.
+- **M2** — new `/api/monitor/cleanup-previews` cron endpoint (gated on `x-cron-secret`) deletes expired, unpurchased preview rows and their storage objects. Bounded to 500 per run. Wired in `DEPLOY_NOTES.md` under daily cron.
+- **M3** — `App.tsx` fires `landing_viewed`, `quiz_started`, `quiz_completed`, `song_viewed` via a step-change `useEffect`. Funnel will be complete from day 1.
+- **M4** — `/api/preview/regenerate` and `/api/preview/checkout` both return 410 Gone when `preview.expires_at < now()`.
+- **M5** — `/api/audio/[songId]` now tries both `{preview_id}.mp3` and `{song_id}.mp3` paths in the private bucket, falling back to stored `audio_url` with a `console.warn` for legacy songs.
+- **M7** — `/api/monitor/failures` falls back to `req.nextUrl.origin` for the internal refund call when `NEXT_PUBLIC_APP_URL` is unset.
+- **M8** — `DEPLOY_NOTES.md` now documents the `orders.preview_id` drift quirk: trust Stripe metadata, not the order row's column, when debugging which preview was paid for.
+- **M6 / M9** — left as-is per report (rate-limit non-atomicity accepted risk; redundant guard already refactored to a typed `promoteErr`).
+- **L1** — webhook no-op ternary (`status: previewId ? 'paid' : 'paid'`) removed.
+- **L2** — new `src/lib/html.ts` with `htmlEscape`; applied to user-controlled fields in `song-ready` and `refund` email templates (recipient name, title, tone, genre, lyric lines, refund reason).
+- **L3** — `/api/audio/[songId]` cache header tightened from `max-age=3600` to `max-age=300` to match the 5-minute signed URL TTL.
+
+Typecheck clean after second round. Ready to ship.

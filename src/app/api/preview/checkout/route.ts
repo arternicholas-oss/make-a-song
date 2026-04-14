@@ -50,6 +50,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Already purchased' }, { status: 409 })
     }
 
+    // M4: reject expired previews. An expired preview's audio may have been
+    // cleaned up by the cron already — letting checkout through here would
+    // let a user pay for a song whose audio is gone.
+    if (preview.expires_at && new Date(preview.expires_at) < new Date()) {
+      return NextResponse.json(
+        { error: 'This preview has expired. Please create a new one.' },
+        { status: 410 }
+      )
+    }
+
     // B1 fix: block checkout on audio-less previews. Lyria failures during
     // generation leave audio_path_full null. Allowing checkout here means the
     // user pays for a song they'll never hear — immediate refund territory.

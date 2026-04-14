@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { supabaseAdmin } from '@/lib/supabase'
 import { GENRE_LABELS } from '@/lib/prompts'
+import { htmlEscape } from '@/lib/html'
 
 const resend = new Resend(process.env.RESEND_API_KEY || '')
 
@@ -45,24 +46,29 @@ export async function POST(req: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL
     const songUrl = `${appUrl}/song/${songId}`
-    const recipientName = song.recipient_name || ''
+    // L2: escape every value that originates from the user (answers,
+    // title/tone from the model, etc.) before interpolating into the
+    // template. Subject lines don't need HTML-escape but they do need the
+    // raw string.
+    const recipientNameRaw = song.recipient_name || ''
+    const recipientName = htmlEscape(recipientNameRaw)
     const isBrand = song.is_brand
-    const songTitle = song.title || 'Your Song'
-    const genre = GENRE_LABELS[song.genre] || song.genre
-    const tone = song.tone
+    const songTitle = htmlEscape(song.title || 'Your Song')
+    const genre = htmlEscape(GENRE_LABELS[song.genre] || song.genre)
+    const tone = htmlEscape(song.tone)
 
     const lyricsHtml = (song.sections || [])
       .map((s: { label: string; lines: string[] }) => `
         <div style="margin-bottom:24px;">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#9A8F88;margin-bottom:10px;">${s.label}</div>
-          ${s.lines.map(l => `<div style="font-size:18px;line-height:1.7;color:#1a1410;">${l}</div>`).join('')}
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#9A8F88;margin-bottom:10px;">${htmlEscape(s.label)}</div>
+          ${s.lines.map(l => `<div style="font-size:18px;line-height:1.7;color:#1a1410;">${htmlEscape(l)}</div>`).join('')}
         </div>
       `)
       .join('')
 
     const subject = isBrand
-      ? `Your brand anthem for ${recipientName} is ready 🎵`
-      : `Your song for ${recipientName} is ready 🎵`
+      ? `Your brand anthem for ${recipientNameRaw} is ready 🎵`
+      : `Your song for ${recipientNameRaw} is ready 🎵`
 
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'songs@makeasongaboutyou.com',

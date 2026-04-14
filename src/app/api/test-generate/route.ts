@@ -111,12 +111,14 @@ export async function POST(req: NextRequest) {
       )
 
       const audioBuffer = Buffer.from(musicResponse.audioBase64, 'base64')
-      // Use correct extension based on mime type from Lyria
-      const ext = musicResponse.mimeType.includes('wav') ? 'wav' : musicResponse.mimeType.includes('mp3') || musicResponse.mimeType.includes('mpeg') ? 'mp3' : 'wav'
-      const audioPath = `${songId}.${ext}`
+      // M1 fix: upload to private bucket with song_id-keyed path so /api/audio
+      // finds it. File extension is always mp3 for consistency with the
+      // preview-first flow (Lyria output is fine in any container; signed
+      // URL's content-type header is what the <audio> element trusts).
+      const audioPath = `${songId}.mp3`
       console.log(`[AUDIO] Uploading ${audioBuffer.byteLength} bytes as ${audioPath} (${musicResponse.mimeType})`)
       const { error: uploadError } = await supabaseAdmin.storage
-        .from('songs-audio')
+        .from('songs-audio-private')
         .upload(audioPath, audioBuffer, {
           contentType: musicResponse.mimeType,
           upsert: true,
@@ -125,8 +127,10 @@ export async function POST(req: NextRequest) {
       if (uploadError) {
         console.error('Audio upload error:', uploadError)
       } else {
-        const { data } = supabaseAdmin.storage.from('songs-audio').getPublicUrl(audioPath)
-        audioUrl = data?.publicUrl
+        const { data: signed } = await supabaseAdmin.storage
+          .from('songs-audio-private')
+          .createSignedUrl(audioPath, 60 * 60 * 24 * 7)
+        audioUrl = signed?.signedUrl
 
         if (audioUrl) {
           await supabaseAdmin

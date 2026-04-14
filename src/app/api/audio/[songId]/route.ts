@@ -48,20 +48,33 @@ export async function GET(
     return NextResponse.json({ error: 'Audio locked — purchase to unlock' }, { status: 402 })
   }
 
-  // Resolve the audio bytes. Preferred source: songs-audio-private bucket at
-  // {preview_id}.mp3 (signed URL). Fallback: legacy public audio_url.
+  // Resolve the audio bytes. Prefer freshly signed URLs to the PRIVATE bucket
+  // (ignores the 7-day signed URL stored on song.audio_url — that could be
+  // expired by the time this is hit, and we can always re-sign in seconds).
+  //   1. Preview-first flow songs live at {preview_id}.mp3
+  //   2. Legacy /api/generate songs (M1) live at {song_id}.mp3
+  //   3. Truly old public-bucket songs fall back to audio_url
   let audioUrl = ''
   let contentType = 'audio/mpeg'
 
-  if (song.preview_id) {
-    const path = `${song.preview_id}.mp3`
+  const pathCandidates: string[] = []
+  if (song.preview_id) pathCandidates.push(`${song.preview_id}.mp3`)
+  pathCandidates.push(`${song.song_id}.mp3`)
+
+  for (const path of pathCandidates) {
     const { data: signed } = await supabaseAdmin.storage
       .from('songs-audio-private')
       .createSignedUrl(path, 300)   // 5 min
-    if (signed?.signedUrl) audioUrl = signed.signedUrl
+    if (signed?.signedUrl) {
+      audioUrl = signed.signedUrl
+      break
+    }
   }
 
   if (!audioUrl && song.audio_url) {
+    // M5 fix: if we fall back to a stored URL, log it so we know legacy
+    // public-bucket audio is being served (and can migrate those rows later).
+    console.warn('[audio] falling back to stored audio_url for song', songId)
     audioUrl = song.audio_url
   }
 
@@ -84,7 +97,10 @@ export async function GET(
     'Content-Type': contentType,
     'Content-Length': audioBuffer.byteLength.toString(),
     'Accept-Ranges': 'bytes',
-    'Cache-Control': 'private, max-age=3600',
+    // L3: cap browser cache at the signed URL lifetime (5 min). If we cache
+    // longer and the order flips to 'refunded', the browser would still serve
+    // the old audio for up to an hour.
+    'Cache-Control': 'private, max-age=300',
   }
   if (dl) {
     headers['Content-Disposition'] = `attachment; filename="${songId}.mp3"`

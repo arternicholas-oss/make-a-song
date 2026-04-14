@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       .from('orders')
       .update({
         paid: true,
-        status: previewId ? 'paid' : 'paid',
+        status: 'paid',
         stripe_payment_id: session.payment_intent as string,
         email: session.customer_email || undefined,
         stripe_session_id: session.id,

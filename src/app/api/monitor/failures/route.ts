@@ -25,6 +25,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // M7: fall back to request origin when NEXT_PUBLIC_APP_URL is unset. Without
+  // this, the internal /api/refund fetch below silently no-ops on the first
+  // misconfigured deploy.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
+
   const cutoff = new Date(Date.now() - STUCK_THRESHOLD_SECONDS * 1000).toISOString()
 
   const { data: stuck, error } = await supabaseAdmin
@@ -60,7 +65,7 @@ export async function GET(req: NextRequest) {
           html: `<div style="font-family:'DM Sans',Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#FFF9F0;color:#1a1410;">
             <h1 style="font-size:24px;margin:0 0 12px;">Something went wrong.</h1>
             <p style="font-size:16px;line-height:1.6;">We couldn't finish generating your song. Our systems flagged the order, and we're refunding your $14.99 — it'll land in 5–10 business days.</p>
-            <p style="font-size:16px;line-height:1.6;">If you'd like to try again, start fresh at <a href="${process.env.NEXT_PUBLIC_APP_URL}" style="color:#FF6B6B;">makeasongaboutyou.com</a>.</p>
+            <p style="font-size:16px;line-height:1.6;">If you'd like to try again, start fresh at <a href="${appUrl}" style="color:#FF6B6B;">makeasongaboutyou.com</a>.</p>
             <p style="font-size:14px;color:#9A8F88;margin-top:24px;">Sorry about this. Reply to this email if we can help another way.</p>
           </div>`,
         })
@@ -77,7 +82,7 @@ export async function GET(req: NextRequest) {
     // Fire refund internally. Don't block on success; the monitor endpoint
     // will re-scan and the admin will see unrefunded failed orders in the DB.
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/refund`, {
+      await fetch(`${appUrl}/api/refund`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
