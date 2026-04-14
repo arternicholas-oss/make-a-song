@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/monitor/failures",
+      "schedule": "*/1 * * * *"
+    },
+    {
+      "path": "/api/monitor/cleanup-previews",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
