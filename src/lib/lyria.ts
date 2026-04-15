@@ -54,8 +54,20 @@ export async function generateMusic(
     }
 
     if (!data.candidates || data.candidates.length === 0) {
-      console.error('[LYRIA] Full response (no candidates):', JSON.stringify(data).slice(0, 1000))
-      throw new Error('No response candidates returned from Lyria API')
+      // Embed promptFeedback + a truncated raw body in the thrown message so
+      // PostHog telemetry shows WHY (Vercel logs truncate). Most common cause:
+      // safety-filter block, surfaced as promptFeedback.blockReason.
+      const feedback = data.promptFeedback ? JSON.stringify(data.promptFeedback) : 'none'
+      const raw = JSON.stringify(data).slice(0, 600)
+      console.error('[LYRIA] Full response (no candidates):', raw)
+      throw new Error(`No response candidates returned from Lyria API. promptFeedback=${feedback} rawHead=${raw}`)
+    }
+
+    // Even when candidates exist, an empty-content + finishReason==SAFETY/RECITATION
+    // also produces a no-audio outcome. Surface that explicitly.
+    const cand0 = data.candidates[0]
+    if (cand0?.finishReason && cand0.finishReason !== 'STOP' && (!cand0.content?.parts || cand0.content.parts.length === 0)) {
+      throw new Error(`Lyria returned candidate with no parts. finishReason=${cand0.finishReason} safetyRatings=${JSON.stringify(cand0.safetyRatings || [])}`)
     }
 
     const candidate = data.candidates[0]
