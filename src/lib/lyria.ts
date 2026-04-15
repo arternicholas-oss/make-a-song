@@ -103,18 +103,32 @@ async function callLyria(apiKey: string, prompt: string): Promise<LyriaCallResul
  *      of having no vocals — but a 20s instrumental clip is much better UX
  *      than no audio at all, since the preview is an audio teaser anyway.
  */
+// Lyria 3 Pro doesn't take a structured voice gender parameter, so we steer
+// it via prompt language. Short, music-direction phrasing works best.
+const VOICE_DIRECTIVE_BY_ID: Record<string, string> = {
+  male:   'male vocalist, warm and confident lead voice',
+  female: 'female vocalist, expressive and present lead voice',
+  either: 'lead vocalist appropriate to the genre',
+}
+
 export async function generateMusic(
   lyrics: string,
   genre: string,
   tone: string,
-  title: string
+  title: string,
+  voice: 'male' | 'female' | 'either' = 'either'
 ): Promise<MusicGenerationResponse> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY environment variable is not set')
   }
 
-  const fullPrompt = `Generate a full song in the style of ${genre} with a ${tone} mood. The song is titled "${title}". Here are the lyrics:\n\n${lyrics}`
+  const voiceDirective = VOICE_DIRECTIVE_BY_ID[voice] || VOICE_DIRECTIVE_BY_ID.either
+
+  const fullPrompt =
+    `Generate a full song in the style of ${genre} with a ${tone} mood. ` +
+    `Vocals: ${voiceDirective}. ` +
+    `The song is titled "${title}". Here are the lyrics:\n\n${lyrics}`
 
   const first = await callLyria(apiKey, fullPrompt)
   if (first.ok && first.audioBase64) {

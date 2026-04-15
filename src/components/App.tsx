@@ -18,6 +18,7 @@ import {
   RELATIONSHIPS, BRAND_INDUSTRIES, GENRE_COLORS,
   GENRE_LABELS, SURPRISES, TIKTOK_CAPTIONS,
   PERSONAL_LOAD_LINES, BRAND_LOAD_LINES, PRICE_DISPLAY,
+  VOICE_OPTIONS, GENRE_VOICE_DEFAULTS,
 } from '@/lib/constants'
 import type { Answers, PersonalAnswers, BrandAnswers, SongRow } from '@/lib/types'
 
@@ -661,6 +662,19 @@ function OccasionStep({ answers, set, onNext }: { answers: Record<string, string
 // ─── GENRE ────────────────────────────────────────────────────────────────────
 function GenreStep({ answers, set, onBack, onNext }: { answers: Record<string, string>; set: (k: string, v: string) => void; onBack: () => void; onNext: () => void }) {
   const isBrand = answers.occasion === 'brand'
+
+  // Picking a genre auto-defaults the voice (if none chosen yet) so the user
+  // never has to hunt for the picker — Continue activates the moment they tap a
+  // card. Re-tapping the same card preserves their voice override.
+  const pickGenre = (gid: string) => {
+    set('genre', gid)
+    if (!answers.voice || answers.genre !== gid) {
+      const def = GENRE_VOICE_DEFAULTS[gid] || 'either'
+      // Only set when no override exists OR user is switching genres entirely.
+      if (!answers.voice || answers.genre !== gid) set('voice', def)
+    }
+  }
+
   return (
     <Shell step={2} total={5}>
       <StepTitle eyebrow="Step 2 of 5" title="Pick your sound 🎸" />
@@ -675,18 +689,51 @@ function GenreStep({ answers, set, onBack, onNext }: { answers: Record<string, s
           const c = GENRE_COLORS[g.id]
           return (
             <div key={g.id} className={`card${sel ? ' sel' : ''}`}
-              onClick={() => set('genre', g.id)}
-              style={{ background: sel ? c.bg : G.white, border: `2px solid ${sel ? c.accent : G.border}`, borderRadius: 20, padding: '22px 20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative' }}>
+              onClick={() => { if (!sel) pickGenre(g.id) }}
+              style={{ background: sel ? c.bg : G.white, border: `2px solid ${sel ? c.accent : G.border}`, borderRadius: 20, padding: '22px 20px', cursor: sel ? 'default' : 'pointer', transition: 'all 0.2s', position: 'relative' }}>
               {sel && <div style={{ position: 'absolute', top: 14, right: 14, width: 24, height: 24, borderRadius: '50%', background: c.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>✓</span></div>}
               <div style={{ fontFamily: "'Fraunces',serif", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{g.label}</div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: c.accent, marginBottom: 12 }}>{g.tagline}</div>
               <div style={{ fontSize: 13, color: G.muted, lineHeight: 1.55, marginBottom: 14 }}>{g.desc}</div>
               <div style={{ fontFamily: "'Fraunces',serif", fontSize: 14, fontStyle: 'italic', color: G.ink, borderLeft: `3px solid ${c.accent}`, paddingLeft: 12, lineHeight: 1.5 }}>{g.sample}</div>
+
+              {sel && (
+                <div style={{ marginTop: 18, paddingTop: 16, borderTop: `1px dashed ${c.accent}55` }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: G.muted, marginBottom: 10 }}>
+                    Lead vocal
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                    {VOICE_OPTIONS.map(v => {
+                      const vSel = (answers.voice || GENRE_VOICE_DEFAULTS[g.id] || 'either') === v.id
+                      return (
+                        <button key={v.id} type="button"
+                          onClick={(e) => { e.stopPropagation(); set('voice', v.id) }}
+                          style={{
+                            padding: '9px 0',
+                            borderRadius: 99,
+                            border: `1.5px solid ${vSel ? c.accent : G.border}`,
+                            background: vSel ? c.accent : G.white,
+                            color: vSel ? '#fff' : G.muted,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase',
+                            fontFamily: 'inherit',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                          }}>
+                          {v.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )
         })}
       </div>
-      <NavRow onBack={onBack} onNext={onNext} disabled={!answers.genre} />
+      <NavRow onBack={onBack} onNext={onNext} disabled={!answers.genre || !answers.voice} />
     </Shell>
   )
 }

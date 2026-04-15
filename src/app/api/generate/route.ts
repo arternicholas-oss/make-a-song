@@ -141,12 +141,19 @@ export async function POST(req: NextRequest) {
         .map(s => `[${s.label}]\n${s.lines.join('\n')}`)
         .join('\n\n')
 
+      // Voice picker on the genre step. Stored on `answers.voice` at order
+      // creation. Defaults to 'either' for legacy orders predating the picker.
+      const voiceRaw = (order.answers as any)?.voice
+      const voice: 'male' | 'female' | 'either' =
+        voiceRaw === 'male' || voiceRaw === 'female' ? voiceRaw : 'either'
+
       console.log('Starting music generation for song:', songId)
       const musicResponse = await generateMusic(
         lyricsText,
         order.genre,
         isBrand ? order.brand_tone : order.tone,
-        parsed.title
+        parsed.title,
+        voice
       )
 
       // Convert base64 to buffer for upload

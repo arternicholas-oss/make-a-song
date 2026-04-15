@@ -121,6 +121,12 @@ export async function POST(req: NextRequest) {
       : (validAnswers as any).recipient_name
     const tone = isBrand ? (validAnswers as any).brand_tone : (validAnswers as any).tone
 
+    // Voice is an optional field on both Personal + Brand answers. Defaults to
+    // 'either' so older clients that don't send it still get audio.
+    const voiceRaw = (validAnswers as any).voice
+    const voice: 'male' | 'female' | 'either' =
+      voiceRaw === 'male' || voiceRaw === 'female' ? voiceRaw : 'either'
+
     // ─── Generate music (Lyria) ───────────────────────────────────────────────
     let audioPathPreview: string | undefined
     let audioUrlPreview: string | undefined
@@ -131,7 +137,7 @@ export async function POST(req: NextRequest) {
         .map(s => `[${s.label}]\n${s.lines.join('\n')}`)
         .join('\n\n')
 
-      const music = await generateMusic(lyricsText, validAnswers.genre, tone, parsed.title)
+      const music = await generateMusic(lyricsText, validAnswers.genre, tone, parsed.title, voice)
       const fullBuffer = Buffer.from(music.audioBase64, 'base64')
 
       // Clip to 20s MP3 for the preview.

@@ -4,6 +4,7 @@ export interface PersonalAnswers {
   occasion: string
   genre: string
   tone: string
+  voice?: 'male' | 'female' | 'either'
   recipient_name: string
   sender_name?: string
   relationship: string
@@ -22,6 +23,7 @@ export interface BrandAnswers {
   occasion: 'brand'
   genre: string
   brand_tone: string
+  voice?: 'male' | 'female' | 'either'
   brand_name: string
   brand_industry: string
   brand_what: string

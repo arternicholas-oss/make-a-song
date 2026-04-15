@@ -103,6 +103,39 @@ export const BRAND_INDUSTRIES = [
   'Music / Entertainment', 'Other',
 ] as const
 
+// ─── VOICE OPTIONS ───────────────────────────────────────────────────────────
+// Lyria 3 Pro doesn't expose a structured voice_gender knob, so we steer the
+// model via the prompt. Stored on `answers.voice` for both personal + brand
+// flows. "either" lets Lyria pick whatever fits the genre.
+
+export type VoiceChoice = 'male' | 'female' | 'either'
+
+export const VOICE_OPTIONS: { id: VoiceChoice; label: string }[] = [
+  { id: 'male',   label: 'Male'   },
+  { id: 'female', label: 'Female' },
+  { id: 'either', label: 'Either' },
+]
+
+// Per-genre defaults to cut decision fatigue. The user can always override.
+// Picks track the most common production convention for each style — '90s R&B
+// leaned female, classic country leaned male, gospel works either way.
+export const GENRE_VOICE_DEFAULTS: Record<string, VoiceChoice> = {
+  '70s_love_song': 'either',
+  '90s_rb':        'female',
+  'country':       'male',
+  'hip_hop':       'male',
+  'pop_anthem':    'either',
+  'gospel':        'either',
+  'indie_folk':    'either',
+}
+
+// Prompt-side phrasing for Lyria — short, declarative, music-direction style.
+export const VOICE_DIRECTIVE: Record<VoiceChoice, string> = {
+  male:   'male vocalist, warm and confident lead voice',
+  female: 'female vocalist, expressive and present lead voice',
+  either: 'lead vocalist appropriate to the genre',
+}
+
 // ─── GENRE COLORS ────────────────────────────────────────────────────────────
 
 export const GENRE_COLORS: Record<string, { bg: string; accent: string; dot: string; grad: [string, string] }> = {

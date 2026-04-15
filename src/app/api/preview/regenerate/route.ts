@@ -89,13 +89,19 @@ export async function POST(req: NextRequest) {
 
     const tone = preview.is_brand ? preview.brand_tone : preview.tone
 
+    // Voice picker on the genre step. Stored on `answers.voice`. Defaults to
+    // 'either' for legacy previews predating the picker.
+    const voiceRaw = (preview.answers as any)?.voice
+    const voice: 'male' | 'female' | 'either' =
+      voiceRaw === 'male' || voiceRaw === 'female' ? voiceRaw : 'either'
+
     let audioUrlPreview: string | undefined = preview.audio_url_preview
     let audioPathPreview: string | undefined = preview.audio_path_preview
     let audioPathFull: string | undefined = preview.audio_path_full
     let lyriaOk = false
 
     try {
-      const music = await generateMusic(lyricsText, preview.genre, tone, preview.title)
+      const music = await generateMusic(lyricsText, preview.genre, tone, preview.title, voice)
       const fullBuffer = Buffer.from(music.audioBase64, 'base64')
       const clip = await clipAudio(fullBuffer, music.mimeType, 20)
 
