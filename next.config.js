@@ -17,11 +17,19 @@ const nextConfig = {
   //      requires so the binary path resolution still works.
   //   2) Explicitly include the platform binary in the function trace so it
   //      ships in the deployment bundle.
-  serverExternalPackages: ['fluent-ffmpeg', 'ffmpeg-static'],
-  outputFileTracingIncludes: {
-    '/api/preview/generate': [
-      './node_modules/ffmpeg-static/ffmpeg',
-    ],
+  //
+  // NOTE: We're on Next.js 14.2.5 which only recognises these under
+  // `experimental.*`. The top-level keys (serverExternalPackages,
+  // outputFileTracingIncludes) are Next.js 15 syntax — silently ignored on
+  // 14.x, which is exactly how the ffmpeg binary went missing from the bundle
+  // again. Use the experimental keys until we upgrade Next.
+  experimental: {
+    serverComponentsExternalPackages: ['fluent-ffmpeg', 'ffmpeg-static'],
+    outputFileTracingIncludes: {
+      '/api/preview/generate': [
+        './node_modules/ffmpeg-static/ffmpeg',
+      ],
+    },
   },
   headers: async () => [
     {
