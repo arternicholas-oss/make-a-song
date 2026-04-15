@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/monitor/failures",
-      "schedule": "*/1 * * * *"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/monitor/cleanup-previews",
