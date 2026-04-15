@@ -6,6 +6,23 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // ── ffmpeg on Vercel serverless ───────────────────────────────────────────
+  // The /api/preview/generate route uses fluent-ffmpeg + ffmpeg-static to clip
+  // the Lyria-generated audio down to a 20s preview. Without these two configs
+  // Next.js tries to inline ffmpeg-static into a JS chunk, which strips the
+  // actual binary and produces ENOENT at runtime ("spawn /var/task/.next/
+  // server/chunks/ffmpeg ENOENT"). The fix is two-part:
+  //
+  //   1) Mark fluent-ffmpeg + ffmpeg-static as external — keep them as runtime
+  //      requires so the binary path resolution still works.
+  //   2) Explicitly include the platform binary in the function trace so it
+  //      ships in the deployment bundle.
+  serverExternalPackages: ['fluent-ffmpeg', 'ffmpeg-static'],
+  outputFileTracingIncludes: {
+    '/api/preview/generate': [
+      './node_modules/ffmpeg-static/ffmpeg',
+    ],
+  },
   headers: async () => [
     {
       source: '/sw.js',
