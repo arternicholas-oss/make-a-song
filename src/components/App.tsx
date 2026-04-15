@@ -491,7 +491,14 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
           </div>
         )}
 
-        <p style={{ fontSize: 13, color: G.muted, marginBottom: 56 }}>Takes 3 minutes · No account needed · Personal or brand</p>
+        {/* Risk-reversal: surface the free preview promise right at the decision point.
+            Most common objection is "what if I pay and it's bad?" — this kills that objection. */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: `${G.mint}1f`, border: `1.5px solid ${G.mint}`, color: G.ink, fontSize: 14, fontWeight: 600, padding: '10px 18px', borderRadius: 99, marginBottom: 14 }}>
+          <span aria-hidden="true" style={{ fontSize: 16 }}>🎧</span>
+          Hear a free 30-second preview before you pay
+        </div>
+
+        <p style={{ fontSize: 13, color: G.muted, marginBottom: 56 }}>Takes 3 minutes · No account needed · Only pay if you love it</p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, textAlign: 'left' }}>
           {[
@@ -516,7 +523,7 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
           {[
             { num: '1', icon: '🎯', title: 'Pick the vibe', desc: 'Choose an occasion, genre, and tone that fits. Birthday roast? Anniversary ballad? Brand anthem? We got you.' },
             { num: '2', icon: '💬', title: 'Tell us about them', desc: 'Answer a few quick questions — their name, what makes them special, a favorite memory. The more detail, the better the song.' },
-            { num: '3', icon: '✨', title: 'Get your song', desc: 'AI writes original lyrics (and optional audio) personalized to every detail you shared. Ready in under 60 seconds.' },
+            { num: '3', icon: '🎧', title: 'Preview it free', desc: 'Hear a 30-second preview with your real lyrics and audio before you pay a dime. Love it? Unlock the full song. Not feeling it? No charge.' },
           ].map((s) => (
             <div key={s.num} style={{ textAlign: 'center', padding: '24px 16px' }}>
               <div aria-hidden="true" style={{ width: 56, height: 56, borderRadius: '50%', background: `linear-gradient(135deg,${G.coral}20,${G.peach}20)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 28 }}>{s.icon}</div>
@@ -539,6 +546,7 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
           <div style={{ fontSize: 14, color: G.muted, marginBottom: 24 }}>per song · one-time payment</div>
           <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
+              'Free 30-second preview before you pay — only buy if you love it',
               'Original lyrics written by AI, personalized to your answers',
               'Choose from 6 genres and 4 tones',
               'Shareable song page with a unique link',
@@ -564,8 +572,9 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
           Questions?
         </h2>
         {[
-          { q: 'How long does it take?', a: 'Under 60 seconds once you submit. You answer a few fun questions (about 3 minutes), pay, and your song is generated instantly.' },
-          { q: 'Can I hear the song or is it just lyrics?', a: 'You get original written lyrics, plus optional AI-generated audio you can play and share.' },
+          { q: 'Do I have to pay before I hear it?', a: 'Nope. After you answer the questions we generate a free 30-second preview — real lyrics, real audio, made from your answers. You only pay if you love it.' },
+          { q: 'How long does it take?', a: 'Under 60 seconds once you submit. You answer a few fun questions (about 3 minutes), hear your free preview, and if you love it, unlock the full song instantly.' },
+          { q: 'Can I hear the song or is it just lyrics?', a: 'You get original written lyrics, plus AI-generated audio you can play and share. The 30-second preview is free — the full song unlocks after purchase.' },
           { q: 'What if I don\'t like the song?', a: 'Every song is uniquely generated from your answers. The more detail you give, the better the result. We also offer one free regeneration per song.' },
           { q: 'Is this a subscription?', a: `No. It's a one-time payment of ${PRICE_DISPLAY}. No recurring charges, no account needed.` },
           { q: 'Can I use this for a business or brand?', a: 'Absolutely. We have a dedicated Brand Mode with custom questions for businesses, podcasts, startups, and more.' },
