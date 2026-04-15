@@ -168,6 +168,27 @@ export async function POST(req: NextRequest) {
       console.error('[preview] music generation error:', musicErr)
       // Audio is a nice-to-have for the preview. Lyrics should still go out,
       // but without audio. Client will show a copy explaining.
+      //
+      // Capture the actual error to PostHog so we can debug — Vercel runtime
+      // logs truncate after ~30 chars, which makes diagnosing Lyria/Gemini
+      // failures impossible from log tooling alone.
+      try {
+        const lyriaMessage = musicErr instanceof Error ? musicErr.message : String(musicErr)
+        const lyriaStack = musicErr instanceof Error ? musicErr.stack : undefined
+        serverCapture(sessionId as string, EVT.PREVIEW_GENERATION_FAILED, {
+          stage: 'lyria',
+          error: lyriaMessage,
+          stack: lyriaStack,
+          gemini_key_set: !!process.env.GEMINI_API_KEY,
+          genre: validAnswers.genre,
+          occasion: validAnswers.occasion,
+          elapsed_ms: Date.now() - startedAt,
+          // We do NOT bail out — preview still ships with lyrics only.
+          fatal: false,
+        })
+      } catch {
+        // telemetry must not mask the real flow
+      }
     }
 
     // ─── Persist preview row ──────────────────────────────────────────────────
