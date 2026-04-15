@@ -519,7 +519,7 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
             { num: '3', icon: '✨', title: 'Get your song', desc: 'AI writes original lyrics (and optional audio) personalized to every detail you shared. Ready in under 60 seconds.' },
           ].map((s) => (
             <div key={s.num} style={{ textAlign: 'center', padding: '24px 16px' }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: `linear-gradient(135deg,${G.coral}20,${G.peach}20)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 28 }}>{s.icon}</div>
+              <div aria-hidden="true" style={{ width: 56, height: 56, borderRadius: '50%', background: `linear-gradient(135deg,${G.coral}20,${G.peach}20)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 28 }}>{s.icon}</div>
               <div style={{ fontFamily: "'Fraunces',serif", fontSize: 18, fontWeight: 700, marginBottom: 8, color: G.ink }}>{s.title}</div>
               <div style={{ fontSize: 14, color: G.muted, lineHeight: 1.6 }}>{s.desc}</div>
             </div>
@@ -878,8 +878,9 @@ function ReviewStep({ answers, email, setEmail, onBack, onGenerate, onTestGenera
       </div>
 
       {previewError && (
-        <div style={{ background: '#FEE', border: '1.5px solid #FCA5A5', color: '#991B1B', borderRadius: 12, padding: '10px 14px', fontSize: 13, marginBottom: 14 }}>
-          {previewError}
+        <div role="alert" style={{ background: '#FEE', border: '1.5px solid #FCA5A5', color: '#991B1B', borderRadius: 12, padding: '12px 14px', fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>We couldn&rsquo;t write your song.</div>
+          <div>Give it another try in a moment, or email <a href="mailto:hi@makeasongaboutyou.com" style={{ color: '#991B1B', textDecoration: 'underline' }}>hi@makeasongaboutyou.com</a> if it keeps happening.</div>
         </div>
       )}
 
@@ -1431,6 +1432,9 @@ function PreviewStep({ preview, isBrand, regenLoading, checkoutLoading, onRegen,
 
         <p style={{ textAlign: 'center', fontSize: 13, color: G.muted, marginTop: 12, lineHeight: 1.5 }}>
           Unlocks the full-length audio · delivered to your email · secure checkout via Stripe
+        </p>
+        <p style={{ textAlign: 'center', fontSize: 12, color: G.muted, marginTop: 6, lineHeight: 1.5 }}>
+          Previews are saved for 7 days, then automatically cleaned up.
         </p>
 
         <div style={{ textAlign: 'center', marginTop: 24 }}>

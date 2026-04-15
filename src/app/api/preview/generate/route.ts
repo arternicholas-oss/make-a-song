@@ -51,6 +51,9 @@ function validateAnswers(answers: unknown): { ok: true; value: Answers } | { ok:
 
 export async function POST(req: NextRequest) {
   const startedAt = Date.now()
+  // Hoisted so the outer catch can include sessionId in the error telemetry
+  // even when failure happens before validation completes.
+  let capturedSessionId = 'unknown'
   try {
     const body = await req.json().catch(() => null)
     if (!body || typeof body !== 'object') {
@@ -62,6 +65,7 @@ export async function POST(req: NextRequest) {
       email?: unknown
       answers?: unknown
     }
+    if (typeof sessionId === 'string') capturedSessionId = sessionId
 
     if (!isSafeString(sessionId) || (sessionId as string).length > 100) {
       return NextResponse.json({ error: 'Invalid sessionId' }, { status: 400 })
@@ -194,16 +198,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to save preview' }, { status: 500 })
     }
 
-    await supabaseAdmin.from('preview_audit').insert({
-      preview_id: previewId,
-      session_id: sessionId,
-      email,
-      ip,
-      event: 'create',
-      attempt_no: 1,
-      lyria_ok: !!audioUrlPreview,
-      elapsed_ms: Date.now() - startedAt,
-    })
+    // Audit insert is best-effort. Never fail the user's request because the
+    // audit log is unavailable — historically a failure here crashed the
+    // entire generate handler post-Lyria, eating the API spend with no
+    // preview shown to the user.
+    try {
+      const { error: auditErr } = await supabaseAdmin.from('preview_audit').insert({
+        preview_id: previewId,
+        session_id: sessionId,
+        email,
+        ip,
+        event: 'create',
+        attempt_no: 1,
+        lyria_ok: !!audioUrlPreview,
+        elapsed_ms: Date.now() - startedAt,
+      })
+      if (auditErr) console.error('[preview] audit insert failed (non-fatal):', auditErr)
+    } catch (auditEx) {
+      console.error('[preview] audit insert threw (non-fatal):', auditEx)
+    }
 
     serverCapture(sessionId as string, EVT.PREVIEW_GENERATED, {
       preview_id: previewId,
@@ -234,7 +247,21 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (err) {
-    console.error('[preview/generate] error:', err)
+    // Surface the real error in logs (Vercel function logs) AND emit a
+    // PostHog server event so we can debug failures without tail access.
+    // The client-facing message stays generic to avoid leaking internals.
+    const message = err instanceof Error ? err.message : String(err)
+    const stack = err instanceof Error ? err.stack : undefined
+    console.error('[preview/generate] error:', message, stack)
+    try {
+      serverCapture(capturedSessionId, EVT.PREVIEW_GENERATION_FAILED, {
+        error: message,
+        elapsed_ms: Date.now() - startedAt,
+      })
+      await flushServer()
+    } catch {
+      // swallow — telemetry must not mask the real error
+    }
     return NextResponse.json({ error: 'Preview generation failed' }, { status: 500 })
   }
 }
