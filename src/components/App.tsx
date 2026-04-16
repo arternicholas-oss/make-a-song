@@ -88,6 +88,11 @@ interface PreviewState {
   regens_remaining: number
 }
 
+// ─── iOS NATIVE APP DETECTION ──────────────────────────────────────────────
+function isIOSApp(): boolean {
+  return typeof window !== 'undefined' && !!(window as any).MASAYiOS?.isNativeApp
+}
+
 export default function App() {
   const [step, setStep]                       = useState<Step>('landing')
   const [answers, setAnswers]                 = useState<Record<string, string>>({})
@@ -242,6 +247,61 @@ export default function App() {
     if (!preview) return
     setCheckoutLoading(true)
     phCapture('checkout_started', { preview_id: preview.preview_id })
+
+    // ── iOS In-App Purchase path ──
+    if (isIOSApp()) {
+      try {
+        const bridge = (window as any).MASAYiOS
+        ;(window as any).__masayPurchaseCallback = async (result: { success: boolean; transactionId?: string; receiptData?: string; error?: string }) => {
+          if (!result.success) {
+            alert(result.error || 'Purchase was cancelled.')
+            setCheckoutLoading(false)
+            return
+          }
+          // Verify with our server and generate the song
+          try {
+            setStep('loading')
+            const res = await fetch('/api/verify-apple-purchase', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                transactionId: result.transactionId,
+                receiptData: result.receiptData,
+                sessionId: getOrCreateSessionId(),
+                email,
+                answers,
+              }),
+            })
+            const data = await res.json()
+            if (data.error) {
+              alert('Song generation failed: ' + data.error)
+              setStep('preview')
+              setCheckoutLoading(false)
+              return
+            }
+            setSong({
+              title: data.song.title,
+              sections: data.song.sections,
+              audioUrl: data.song.audio_url,
+              songId: data.songId,
+            })
+            setStep('result')
+          } catch {
+            alert('Something went wrong generating your song.')
+            setStep('preview')
+          } finally {
+            setCheckoutLoading(false)
+          }
+        }
+        bridge.requestPurchase('com.makeasongaboutyou.song')
+      } catch {
+        alert('Something went wrong with the purchase.')
+        setCheckoutLoading(false)
+      }
+      return
+    }
+
+    // ── Web Stripe path ──
     try {
       const res = await fetch('/api/preview/checkout', {
         method: 'POST',
@@ -553,7 +613,7 @@ function Landing({ onStart, answers, set, applySurprise }: { onStart: () => void
               'Shareable song page with a unique link',
               'Delivered via email so you never lose it',
               'Works for personal gifts or brand anthems',
-              'Secure checkout via Stripe (Apple Pay + Google Pay)',
+              isIOSApp() ? 'Secure payment via Apple' : 'Secure checkout via Stripe (Apple Pay + Google Pay)',
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: G.ink, lineHeight: 1.5 }}>
                 <span style={{ color: G.mint, fontSize: 16, flexShrink: 0, marginTop: 1 }}>&#10003;</span>
@@ -1487,7 +1547,7 @@ function PreviewStep({ preview, isBrand, regenLoading, checkoutLoading, onRegen,
         </button>
 
         <p style={{ textAlign: 'center', fontSize: 13, color: G.muted, marginTop: 12, lineHeight: 1.5 }}>
-          Unlocks the full-length audio · delivered to your email · secure checkout via Stripe
+          Unlocks the full-length audio · delivered to your email · {isIOSApp() ? 'secure payment via Apple' : 'secure checkout via Stripe'}
         </p>
         <p style={{ textAlign: 'center', fontSize: 12, color: G.muted, marginTop: 6, lineHeight: 1.5 }}>
           Previews are saved for 7 days, then automatically cleaned up.
