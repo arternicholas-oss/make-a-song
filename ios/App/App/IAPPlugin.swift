@@ -1,6 +1,7 @@
 import Foundation
 import Capacitor
 import StoreKit
+import WebKit
 
 /// Capacitor plugin that handles Apple In-App Purchases via StoreKit 2.
 /// Injects `window.MASAYiOS` bridge into the web view for compatibility
@@ -13,7 +14,12 @@ class IAPPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "requestPurchase", returnType: CAPPluginReturnPromise)
     ]
 
-    private var products: [Product] = []
+    @available(iOS 15.0, *)
+    private var products: [Product] {
+        get { return (_products as? [Product]) ?? [] }
+        set { _products = newValue }
+    }
+    private var _products: [Any] = []
     private let productId = "com.makeasongaboutyou.song"
 
     override func load() {
@@ -38,28 +44,39 @@ class IAPPlugin: CAPPlugin, CAPBridgedPlugin {
             webView.evaluateJavaScript(js, completionHandler: nil)
         }
 
-        // Start listening for transactions
-        Task {
-            for await result in Transaction.updates {
-                if case .verified(let transaction) = result {
-                    await transaction.finish()
+        // Start listening for transactions (StoreKit 2)
+        if #available(iOS 15.0, *) {
+            Task {
+                for await result in Transaction.updates {
+                    if case .verified(let transaction) = result {
+                        await transaction.finish()
+                    }
                 }
             }
-        }
 
-        // Pre-load products
-        Task {
-            do {
-                products = try await Product.products(for: [productId])
-                print("[IAPPlugin] Loaded \(products.count) product(s)")
-            } catch {
-                print("[IAPPlugin] Failed to load products: \(error)")
+            // Pre-load products
+            Task {
+                do {
+                    self.products = try await Product.products(for: [productId])
+                    print("[IAPPlugin] Loaded \(self.products.count) product(s)")
+                } catch {
+                    print("[IAPPlugin] Failed to load products: \(error)")
+                }
             }
         }
     }
 
     /// Called from web via Capacitor bridge or MASAYiOS.requestPurchase()
     @objc func requestPurchase(_ call: CAPPluginCall) {
+        if #available(iOS 15.0, *) {
+            _requestPurchaseIOS15(call)
+        } else {
+            call.reject("In-App Purchase requires iOS 15 or later")
+        }
+    }
+
+    @available(iOS 15.0, *)
+    private func _requestPurchaseIOS15(_ call: CAPPluginCall) {
         let requestedId = call.getString("productId") ?? productId
 
         Task {
