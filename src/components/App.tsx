@@ -90,7 +90,13 @@ interface PreviewState {
 
 // ─── iOS NATIVE APP DETECTION ──────────────────────────────────────────────
 function isIOSApp(): boolean {
-  return typeof window !== 'undefined' && !!(window as any).MASAYiOS?.isNativeApp
+  if (typeof window === 'undefined') return false
+  // Check for our injected bridge (from Capacitor IAPPlugin or standalone WKWebView)
+  if ((window as any).MASAYiOS?.isNativeApp) return true
+  // Check for Capacitor native platform (bridge injects MASAYiOS at document start,
+  // but Capacitor is detectable immediately)
+  if ((window as any).Capacitor?.isNativePlatform?.()) return true
+  return false
 }
 
 export default function App() {
@@ -251,7 +257,9 @@ export default function App() {
     // ── iOS In-App Purchase path ──
     if (isIOSApp()) {
       try {
-        const bridge = (window as any).MASAYiOS
+        const bridge = (window as any).MASAYiOS || {
+          requestPurchase: (productId: string) => (window as any).Capacitor?.Plugins?.IAPPlugin?.requestPurchase({ productId })
+        }
         ;(window as any).__masayPurchaseCallback = async (result: { success: boolean; transactionId?: string; receiptData?: string; error?: string }) => {
           if (!result.success) {
             alert(result.error || 'Purchase was cancelled.')
